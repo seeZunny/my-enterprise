@@ -1,41 +1,115 @@
 // ============================================================
-// DB — IndexedDB layer + customer/partner address memory
+// DB — Supabase-backed cloud sync (API-compatible with old IndexedDB layer)
 // ============================================================
-const DB_NAME='AtelierDocsDB', DB_VER=3;
-let db;
+// All data persists in Supabase table `app_store` (one row per user+store).
+// In-memory cache mirrors all stores for synchronous-feeling reads.
+// Writes are debounced and pushed back to Supabase per store.
+// ============================================================
+const STORE_KEY={
+  settings:'id', customers:'id', inventory:'id',
+  quotations:'id', invoices:'id', receipts:'id',
+  billings:'id', billing_combined:'id',
+  doc_counters:'type', address_book:'id',
+};
+const STORE_LIST=Object.keys(STORE_KEY);
+const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','address_book']);
 
-function initDB(){
-  return new Promise((ok,fail)=>{
-    const r=indexedDB.open(DB_NAME,DB_VER);
-    r.onerror=()=>fail(r.error);
-    r.onsuccess=()=>{db=r.result;ok(db);};
-    r.onupgradeneeded=e=>{
-      const d=e.target.result;
-      [
-        {name:'settings',key:'id'},
-        {name:'customers',key:'id',ai:true},
-        {name:'inventory',key:'id',ai:true},
-        {name:'quotations',key:'id',ai:true},
-        {name:'invoices',key:'id',ai:true},
-        {name:'receipts',key:'id',ai:true},
-        {name:'billings',key:'id',ai:true},
-        {name:'billing_combined',key:'id',ai:true},
-        {name:'doc_counters',key:'type'},
-        {name:'address_book',key:'id',ai:true}, // จดจำที่อยู่ลูกค้า/คู่ค้า
-      ].forEach(s=>{
-        if(!d.objectStoreNames.contains(s.name))
-          d.createObjectStore(s.name,{keyPath:s.key,autoIncrement:!!s.ai});
-      });
-    };
+const _mem={};         // _mem[store] = { [key]: record }
+const _autoSeq={};     // _autoSeq[store] = next numeric id
+const _flushTimers={}; // per-store debounce timer
+let _sb=null;          // supabase client
+const FLUSH_MS=400;
+
+function _getSb(){
+  if(_sb)return _sb;
+  if(!window.supabase)throw new Error('Supabase JS SDK ยังไม่โหลด');
+  if(!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY)throw new Error('ยังไม่ได้ตั้งค่า Supabase URL/Key');
+  _sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
   });
+  window._sb=_sb;
+  return _sb;
 }
 
-const dbGet=(s,k)=>new Promise((ok,fail)=>{const t=db.transaction(s,'readonly'),r=t.objectStore(s).get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error);});
-const dbAll=(s)=>new Promise((ok,fail)=>{const t=db.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>fail(r.error);});
-const dbPut=(s,d)=>new Promise((ok,fail)=>{const t=db.transaction(s,'readwrite'),r=t.objectStore(s).put(d);r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error);});
-const dbAdd=(s,d)=>new Promise((ok,fail)=>{const t=db.transaction(s,'readwrite'),r=t.objectStore(s).add(d);r.onsuccess=()=>ok(r.result);r.onerror=()=>fail(r.error);});
-const dbDel=(s,k)=>new Promise((ok,fail)=>{const t=db.transaction(s,'readwrite'),r=t.objectStore(s).delete(k);r.onsuccess=()=>ok();r.onerror=()=>fail(r.error);});
-const dbClear=(s)=>new Promise((ok)=>{const t=db.transaction(s,'readwrite');t.objectStore(s).clear();t.oncomplete=ok;});
+async function initDB(){
+  const sb=_getSb();
+  const {data:s}=await sb.auth.getSession();
+  if(!s||!s.session)throw new Error('ยังไม่ได้เข้าสู่ระบบ');
+  const {data,error}=await sb.from('app_store').select('store,data');
+  if(error)throw new Error('โหลดข้อมูลล้มเหลว: '+error.message);
+  STORE_LIST.forEach(s=>{_mem[s]={};_autoSeq[s]=1;});
+  (data||[]).forEach(row=>{
+    const arr=Array.isArray(row.data)?row.data:[];
+    const kp=STORE_KEY[row.store]||'id';
+    arr.forEach(rec=>{
+      _mem[row.store][rec[kp]]=rec;
+      if(AUTO_INC.has(row.store)&&typeof rec.id==='number'&&rec.id>=_autoSeq[row.store]){
+        _autoSeq[row.store]=rec.id+1;
+      }
+    });
+  });
+  return true;
+}
+
+function _scheduleFlush(store){
+  clearTimeout(_flushTimers[store]);
+  _flushTimers[store]=setTimeout(()=>_flush(store),FLUSH_MS);
+}
+
+async function _flush(store){
+  delete _flushTimers[store];
+  const arr=Object.values(_mem[store]||{});
+  const sb=_getSb();
+  const {data:s}=await sb.auth.getSession();
+  if(!s||!s.session)return;
+  const {error}=await sb.from('app_store').upsert({
+    user_id:s.session.user.id,
+    store,
+    data:arr,
+  },{onConflict:'user_id,store'});
+  if(error){
+    console.error('[sync]',store,error);
+    if(typeof toast==='function')toast('Sync ล้มเหลว: '+error.message,'err');
+  }
+}
+
+// flush remaining writes when leaving the page (best-effort)
+window.addEventListener('beforeunload',()=>{
+  Object.keys(_flushTimers).forEach(s=>{
+    if(_flushTimers[s]){clearTimeout(_flushTimers[s]);_flush(s);}
+  });
+});
+
+function dbGet(s,k){return Promise.resolve(_mem[s]?_mem[s][k]:undefined);}
+function dbAll(s){return Promise.resolve(Object.values(_mem[s]||{}));}
+function dbPut(s,d){
+  const kp=STORE_KEY[s]||'id';
+  if(d[kp]==null&&AUTO_INC.has(s))d[kp]=_autoSeq[s]++;
+  if(!_mem[s])_mem[s]={};
+  _mem[s][d[kp]]=d;
+  if(AUTO_INC.has(s)&&typeof d[kp]==='number'&&d[kp]>=_autoSeq[s])_autoSeq[s]=d[kp]+1;
+  _scheduleFlush(s);
+  return Promise.resolve(d[kp]);
+}
+function dbAdd(s,d){
+  const kp=STORE_KEY[s]||'id';
+  if(AUTO_INC.has(s))d[kp]=_autoSeq[s]++;
+  if(!_mem[s])_mem[s]={};
+  _mem[s][d[kp]]=d;
+  _scheduleFlush(s);
+  return Promise.resolve(d[kp]);
+}
+function dbDel(s,k){
+  if(_mem[s])delete _mem[s][k];
+  _scheduleFlush(s);
+  return Promise.resolve();
+}
+function dbClear(s){
+  _mem[s]={};
+  if(AUTO_INC.has(s))_autoSeq[s]=1;
+  _scheduleFlush(s);
+  return Promise.resolve();
+}
 
 // ============================================================
 // DOC NUMBERING — BL counter shared for billing + billing_combined

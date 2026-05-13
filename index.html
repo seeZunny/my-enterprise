@@ -8,10 +8,48 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* Auth overlay */
+  #auth-ov{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+  .auth-card{max-width:420px;width:100%;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:36px 32px;box-shadow:var(--shadow-lg);text-align:center}
+  .auth-mark{width:54px;height:54px;border-radius:12px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:30px;margin:0 auto 18px}
+  .auth-card h1{font-family:var(--font-display);font-style:italic;font-size:32px;font-weight:400;margin:0 0 6px;color:var(--ink)}
+  .auth-card .auth-sub{font-size:13px;color:var(--ink-3);margin:0 0 24px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+  .auth-card p.auth-desc{font-size:13.5px;color:var(--ink-2);margin:0 0 22px;line-height:1.55}
+  .auth-card input[type=email]{width:100%;padding:12px 14px;border:1px solid var(--rule-2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;transition:border-color var(--t-fast)}
+  .auth-card input[type=email]:focus{outline:none;border-color:var(--copper)}
+  .auth-card button{width:100%;margin-top:12px;padding:12px 16px;border:none;border-radius:8px;background:var(--ink);color:var(--paper);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity var(--t-fast)}
+  .auth-card button:hover{opacity:.85}
+  .auth-card button:disabled{opacity:.5;cursor:not-allowed}
+  #auth-msg{margin-top:14px;font-size:12.5px;min-height:16px}
+  #auth-msg.ok{color:#0a6b2f}
+  #auth-msg.err{color:#b3261e}
+  /* Sign-out chip in topnav */
+  .tn-user{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--paper-3);font-size:12px;color:var(--ink-2);cursor:pointer;transition:background var(--t-fast);user-select:none;border:1px solid var(--rule)}
+  .tn-user:hover{background:var(--paper-4)}
+  .tn-user .tn-avatar{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;text-transform:uppercase}
+  .tn-user-email{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media(max-width:1100px){.tn-user-email{display:none}}
+</style>
 </head>
 <body>
 <div id="toaster"></div>
 <div id="mob-ov" class="mob-ov" onclick="closeMobDrawer()"></div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-ov" style="display:none">
+  <div class="auth-card">
+    <div class="auth-mark">m</div>
+    <h1>เข้าสู่<i>ระบบ</i></h1>
+    <div class="auth-sub">My Enterprise</div>
+    <p class="auth-desc">ใส่อีเมลของคุณ — เราจะส่งลิงก์เข้าสู่ระบบให้<br>ข้อมูล sync อัตโนมัติทุกเครื่อง</p>
+    <form id="auth-form" onsubmit="return submitAuth(event)">
+      <input id="auth-email" type="email" required placeholder="you@example.com" autocomplete="email" />
+      <button type="submit" id="auth-btn">ส่งลิงก์เข้าสู่ระบบ</button>
+    </form>
+    <div id="auth-msg"></div>
+  </div>
+</div>
 
 <!-- Mobile drawer -->
 <aside id="mob-drawer">
@@ -65,6 +103,13 @@
   </div>
 </div>
 
+<!-- Supabase config -->
+<script>
+  window.SUPABASE_URL='https://wfgbobtcwxaahjprvkyo.supabase.co';
+  window.SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmZ2JvYnRjd3hhYWhqcHJ2a3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTM4NTMsImV4cCI6MjA5NDE4OTg1M30.szocRVqojaNPt0IvukjeEbJucfY7WLpdbpkUIQQD6DA';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="icons.js"></script>
 <script src="core.js"></script>
 <script src="forms.js"></script>
@@ -99,25 +144,107 @@ async function seedIfEmpty(){
   }
 }
 
+async function loadAppForUser(){
+  await initDB();
+  const ex=await dbGet('settings','company');
+  if(!ex)await dbPut('settings',DEF_SET);
+  await seedIfEmpty();
+  await repairCounters();
+  invalidateSettings();
+  const set=await getSettings();
+  const initial=(set.name||'M').trim().charAt(0).toLowerCase();
+  document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>el.textContent=initial);
+  document.getElementById('tn-brand-name').textContent=set.name;
+  document.getElementById('md-name').textContent=set.name;
+  setupCreateMenu();
+  renderUserChip();
+  await refreshNavCounts();
+  await navigate('dashboard');
+}
+
 async function init(){
   try{
-    await initDB();
-    const ex=await dbGet('settings','company');
-    if(!ex)await dbPut('settings',DEF_SET);
-    await seedIfEmpty();
-    await repairCounters();
-    const set=await getSettings();
-    const initial=(set.name||'M').trim().charAt(0).toLowerCase();
-    document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>el.textContent=initial);
-    document.getElementById('tn-brand-name').textContent=set.name;
-    document.getElementById('md-name').textContent=set.name;
-    setupCreateMenu();
-    await refreshNavCounts();
-    await navigate('dashboard');
+    if(!window.supabase){throw new Error('Supabase SDK โหลดไม่สำเร็จ — เช็คอินเทอร์เน็ต');}
+    const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+    });
+    window._sb=sb;
+    // listen for sign-in/out
+    sb.auth.onAuthStateChange((evt,session)=>{
+      if(evt==='SIGNED_OUT'){location.reload();}
+      if(evt==='SIGNED_IN'&&document.getElementById('auth-ov').style.display!=='none'){
+        document.getElementById('auth-ov').style.display='none';
+        loadAppForUser().catch(showInitError);
+      }
+    });
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){
+      // show login
+      document.getElementById('auth-ov').style.display='flex';
+      document.getElementById('content').innerHTML='';
+      return;
+    }
+    await loadAppForUser();
   }catch(e){
-    document.getElementById('content').innerHTML='<div class="empty"><div class="empty-i">⚠</div><div class="empty-t">เกิดข้อผิดพลาด</div><div class="empty-s">'+esc(e.message)+'</div></div>';
-    console.error(e);
+    showInitError(e);
   }
+}
+
+function showInitError(e){
+  document.getElementById('content').innerHTML='<div class="empty"><div class="empty-i">⚠</div><div class="empty-t">เกิดข้อผิดพลาด</div><div class="empty-s">'+esc(e.message)+'</div></div>';
+  console.error(e);
+}
+
+// ============================================================
+// AUTH — magic link login + sign-out chip in topnav
+// ============================================================
+async function submitAuth(ev){
+  ev.preventDefault();
+  const email=document.getElementById('auth-email').value.trim();
+  const btn=document.getElementById('auth-btn');
+  const msg=document.getElementById('auth-msg');
+  msg.className='';msg.textContent='';
+  btn.disabled=true;btn.textContent='กำลังส่ง...';
+  try{
+    const {error}=await window._sb.auth.signInWithOtp({
+      email,
+      options:{emailRedirectTo:window.location.origin+window.location.pathname}
+    });
+    if(error)throw error;
+    msg.className='ok';
+    msg.innerHTML='✅ ส่งลิงก์ไปที่ <b>'+esc(email)+'</b> แล้ว<br>เปิดอีเมลแล้วกดลิงก์เข้าระบบ';
+    btn.textContent='ส่งซ้ำ';
+  }catch(e){
+    msg.className='err';
+    msg.textContent='❌ '+(e.message||'ส่งไม่สำเร็จ');
+    btn.textContent='ส่งลิงก์เข้าสู่ระบบ';
+  }finally{
+    btn.disabled=false;
+  }
+  return false;
+}
+
+async function signOut(){
+  if(!confirm('ออกจากระบบ?'))return;
+  await window._sb.auth.signOut();
+  // onAuthStateChange handles reload
+}
+
+function renderUserChip(){
+  const actions=document.querySelector('.tn-actions');
+  if(!actions||document.getElementById('tn-user'))return;
+  window._sb.auth.getUser().then(({data})=>{
+    const u=data&&data.user;if(!u)return;
+    const email=u.email||'';
+    const init=(email[0]||'?').toUpperCase();
+    const chip=document.createElement('div');
+    chip.id='tn-user';
+    chip.className='tn-user';
+    chip.title='คลิกเพื่อออกจากระบบ';
+    chip.onclick=signOut;
+    chip.innerHTML='<div class="tn-avatar">'+esc(init)+'</div><div class="tn-user-email">'+esc(email)+'</div>';
+    actions.appendChild(chip);
+  });
 }
 
 // CREATE MENU dropdown
