@@ -192,11 +192,15 @@ async function printDoc(store,id){
     +'body{font-family:\'Inter\',\'IBM Plex Sans Thai\',\'Sarabun\',sans-serif;background:#94a3b8;-webkit-font-smoothing:antialiased}'
     +'.wrap{max-width:210mm;margin:0 auto;padding:24px 0;display:flex;flex-direction:column;gap:18px}'
     +'.a4{width:210mm;min-height:297mm;background:#fff;padding:18mm 15mm 18mm;box-shadow:0 18px 36px rgba(15,23,42,.25);position:relative;page-break-after:always}'
-    +'@media print{body{background:#fff}.wrap{padding:0;gap:0}.a4{box-shadow:none;margin:0}.no-print{display:none!important}}'
+    +'@page{size:A4;margin:0}'
+    +'@media print{html,body{margin:0!important;padding:0!important;background:#fff}.wrap{padding:0;gap:0;max-width:none}.a4{box-shadow:none;margin:0;width:210mm;min-height:297mm}.no-print{display:none!important}}'
     +'.pbtn{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;z-index:99;box-shadow:0 8px 24px rgba(15,23,42,.3);display:flex;align-items:center;gap:8px}'
     +'.pbtn:hover{background:#1e293b}'
+    +'.phint{position:fixed;bottom:24px;left:24px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:11.5px;color:#475569;max-width:300px;line-height:1.5;box-shadow:0 4px 12px rgba(15,23,42,.08);z-index:99}'
+    +'.phint b{color:#0f172a}'
     +'</style></head><body>'
     +'<div class="wrap">'+html+'</div>'
+    +'<div class="phint no-print">💡 ถ้ามี <b>วันที่/ชื่อเอกสาร/URL</b> เด้งบนกระดาษ — ในหน้าต่างพิมพ์ของ Chrome กด <b>"More settings"</b> → ปิด <b>"Headers and footers"</b></div>'
     +'<button class="pbtn no-print" onclick="window.print()">🖨 พิมพ์ / Save PDF</button>'
     +'</body></html>');
   win.document.close();
