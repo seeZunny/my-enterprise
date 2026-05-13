@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "any",
   "background_color": "#fefcf7",
-  "theme_color": "#1c1815",
+  "theme_color": "#fefcf7",
   "lang": "th",
   "dir": "ltr",
   "categories": ["business", "finance", "productivity"],
