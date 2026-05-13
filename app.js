@@ -776,6 +776,30 @@ async function resetSettings(){
 async function pgBackup(){
   const c=document.getElementById('content');c.innerHTML='';
   c.insertAdjacentHTML('beforeend','<div class="ph"><div><div class="pt">Backup & Restore</div><div class="ps">สำรองข้อมูลและกู้คืน</div></div></div>');
+
+  // EXCEL EXPORT (รายเดือน)
+  const now=new Date();
+  const defaultMonth=now.toISOString().slice(0,7); // YYYY-MM
+  const xc=document.createElement('div');xc.className='card';xc.style.cssText='margin-bottom:20px';
+  xc.innerHTML='<div class="card-header"><div class="card-title">'+I.download+' Export Excel รายเดือน</div></div><div class="card-body">'
+    +'<p style="color:var(--text-2);margin-bottom:18px;line-height:1.7;font-size:13px">ดาวน์โหลดเอกสารเป็นไฟล์ <code class="code">.xlsx</code> เปิดใน Excel / Google Sheets ได้ — เหมาะสำหรับส่งบัญชี/ทำรายงาน</p>'
+    +'<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:end">'
+    +'<div><div style="font-size:12px;color:var(--text-2);margin-bottom:6px;font-weight:500">เดือน</div>'
+    +'<input type="month" id="ex-month" value="'+defaultMonth+'" class="fc"></div>'
+    +'<div><div style="font-size:12px;color:var(--text-2);margin-bottom:8px;font-weight:500">เอกสารที่จะ export</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px">'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="quotations" checked> ใบเสนอราคา</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="invoices" checked> ใบกำกับ/ใบส่งของ</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="receipts" checked> ใบเสร็จ</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="billings" checked> ใบวางบิล</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="billing_combined" checked> ใบวางบิลรวม</label>'
+    +'</div></div>'
+    +'</div>'
+    +'<button class="btn btn-accent btn-lg" onclick="exportExcelMonth()" style="margin-top:18px;width:100%">'+I.download+' ดาวน์โหลด Excel</button>'
+    +'<div id="ex-info" style="margin-top:12px;padding:12px;background:var(--surface-2);border-radius:var(--r-sm);font-size:12.5px;color:var(--text-3)">เลือกเดือน + ประเภทเอกสาร แล้วกดดาวน์โหลด</div>'
+    +'</div>';
+  c.appendChild(xc);
+
   const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:20px';
 
   const c1=document.createElement('div');c1.className='card';
@@ -831,6 +855,121 @@ async function backupData(){
   const info=document.getElementById('bk-info');
   if(info)info.innerHTML='<b style="color:var(--success)">'+I.check+' Backup สำเร็จ</b><br><span style="font-size:11.5px;color:var(--text-3)">เวลา: '+thDate()+'</span>';
   toast('Backup สำเร็จ');
+}
+
+// ============================================================
+// EXCEL EXPORT — รายเดือน, .xlsx จริง (ไม่ใช่ CSV)
+// ============================================================
+const _STORE_LABEL={
+  quotations:'ใบเสนอราคา',
+  invoices:'ใบกำกับ-ใบส่งของ',
+  receipts:'ใบเสร็จ',
+  billings:'ใบวางบิล',
+  billing_combined:'ใบวางบิลรวม',
+};
+
+function _docInMonth(d,ym){
+  const dt=d.docDate||d.createdAt;
+  if(!dt)return false;
+  return String(dt).slice(0,7)===ym;
+}
+
+function _docToRow(d){
+  return {
+    'เลขที่เอกสาร':d.docNumber||'',
+    'วันที่':d.docDate||'',
+    'ลูกค้า':d.customerName||'',
+    'เลขผู้เสียภาษี':d.customerTax||'',
+    'ที่อยู่':d.customerAddress||'',
+    'จำนวนรายการ':(d.items||[]).length,
+    'ยอดก่อนภาษี':Number(d.subtotal||0),
+    'ภาษี (VAT)':Number(d.vat||0),
+    'ยอดสุทธิ':Number(d.total||0),
+    'หมายเหตุ':d.notes||d.note||'',
+    'อ้างอิง':d.ref||'',
+    'สร้างเมื่อ':d.createdAt||'',
+  };
+}
+
+function _itemRows(d){
+  return (d.items||[]).map((it,i)=>({
+    'เลขที่เอกสาร':d.docNumber||'',
+    'วันที่':d.docDate||'',
+    'ลูกค้า':d.customerName||'',
+    'ลำดับ':i+1,
+    'รายการ':it.desc||'',
+    'จำนวน':Number(it.qty||0),
+    'หน่วย':it.unit||'',
+    'ราคา/หน่วย':Number(it.unitPrice||0),
+    'รวม':Number(it.total||(it.qty||0)*(it.unitPrice||0)),
+  }));
+}
+
+async function exportExcelMonth(){
+  const ym=document.getElementById('ex-month').value; // YYYY-MM
+  const info=document.getElementById('ex-info');
+  if(!ym){info.innerHTML='<span style="color:var(--danger)">กรุณาเลือกเดือน</span>';return;}
+  const types=Array.from(document.querySelectorAll('.ex-type:checked')).map(c=>c.value);
+  if(!types.length){info.innerHTML='<span style="color:var(--danger)">กรุณาเลือกประเภทเอกสารอย่างน้อย 1 ประเภท</span>';return;}
+  if(!window.XLSX){toast('Library .xlsx โหลดไม่สำเร็จ — เช็คอินเทอร์เน็ต','err');return;}
+
+  info.innerHTML='<span class="spin"></span> กำลังรวบรวมข้อมูล...';
+  const wb=XLSX.utils.book_new();
+  const summary=[];
+  let grandTotal=0,grandCount=0;
+
+  for(const t of types){
+    const all=await dbAll(t);
+    const docs=all.filter(d=>_docInMonth(d,ym)).sort((a,b)=>(a.docDate||'').localeCompare(b.docDate||''));
+    const rows=docs.map(_docToRow);
+    const total=docs.reduce((s,d)=>s+Number(d.total||0),0);
+    summary.push({
+      'ประเภทเอกสาร':_STORE_LABEL[t]||t,
+      'จำนวน':docs.length,
+      'ยอดรวม':total,
+    });
+    grandCount+=docs.length;grandTotal+=total;
+
+    // sheet หลัก
+    const ws=XLSX.utils.json_to_sheet(rows.length?rows:[{'เลขที่เอกสาร':'(ไม่มีเอกสารในเดือนนี้)'}]);
+    // ปรับความกว้าง column
+    ws['!cols']=[{wch:18},{wch:12},{wch:32},{wch:16},{wch:40},{wch:10},{wch:14},{wch:12},{wch:14},{wch:24},{wch:14},{wch:20}];
+    const sheetName=(_STORE_LABEL[t]||t).slice(0,31);
+    XLSX.utils.book_append_sheet(wb,ws,sheetName);
+
+    // sheet รายการสินค้า/บริการ (line items)
+    if(docs.length){
+      const items=docs.flatMap(_itemRows);
+      if(items.length){
+        const wsi=XLSX.utils.json_to_sheet(items);
+        wsi['!cols']=[{wch:18},{wch:12},{wch:32},{wch:8},{wch:40},{wch:10},{wch:10},{wch:14},{wch:14}];
+        XLSX.utils.book_append_sheet(wb,wsi,(sheetName+' — รายการ').slice(0,31));
+      }
+    }
+  }
+
+  // sheet สรุป (อันแรก)
+  summary.push({});
+  summary.push({'ประเภทเอกสาร':'รวมทั้งสิ้น','จำนวน':grandCount,'ยอดรวม':grandTotal});
+  const wss=XLSX.utils.json_to_sheet(summary);
+  wss['!cols']=[{wch:24},{wch:12},{wch:18}];
+  // แทรก sheet สรุปไว้หน้าสุด
+  wb.SheetNames.unshift('สรุป');
+  wb.Sheets['สรุป']=wss;
+
+  // header info
+  XLSX.utils.sheet_add_aoa(wss,[
+    ['รายงาน Export เอกสาร'],
+    ['เดือน',ym],
+    ['สร้างเมื่อ',new Date().toLocaleString('th-TH')],
+    [],
+  ],{origin:'E1'});
+
+  const fname='เอกสาร-'+ym+'.xlsx';
+  XLSX.writeFile(wb,fname);
+
+  info.innerHTML='<b style="color:var(--success)">'+I.check+' ดาวน์โหลดเสร็จ</b> — '+esc(fname)+' · '+grandCount+' เอกสาร · ยอดรวม ฿'+fmoney(grandTotal);
+  toast('Export Excel สำเร็จ — '+grandCount+' เอกสาร');
 }
 
 async function restoreData(inp){
