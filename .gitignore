@@ -1,6 +1,7 @@
 .claude/
 design_pkg/
 serve.ps1
+secrets.local.md
 *.log
 .DS_Store
 Thumbs.db
