@@ -24,12 +24,10 @@
   #auth-msg{margin-top:14px;font-size:12.5px;min-height:16px}
   #auth-msg.ok{color:#0a6b2f}
   #auth-msg.err{color:#b3261e}
-  /* Sign-out chip in topnav */
-  .tn-user{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--paper-3);font-size:12px;color:var(--ink-2);cursor:pointer;transition:background var(--t-fast);user-select:none;border:1px solid var(--rule)}
-  .tn-user:hover{background:var(--paper-4)}
-  .tn-user .tn-avatar{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px;text-transform:uppercase}
-  .tn-user-email{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  @media(max-width:1100px){.tn-user-email{display:none}}
+  /* Sign-out chip in topnav — avatar only, hover shows full email tooltip */
+  .tn-user{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);font-weight:600;font-size:12px;text-transform:uppercase;cursor:pointer;transition:opacity var(--t-fast);user-select:none;flex-shrink:0;border:none}
+  .tn-user:hover{opacity:.8}
+  .tn-user-email{display:none}
 </style>
 </head>
 <body>
@@ -267,7 +265,8 @@ function renderUserChip(){
     chip.className='tn-user';
     chip.title='คลิกเพื่อออกจากระบบ';
     chip.onclick=signOut;
-    chip.innerHTML='<div class="tn-avatar">'+esc(init)+'</div><div class="tn-user-email">'+esc(email)+'</div>';
+    chip.title='เข้าระบบเป็น '+email+' — คลิกเพื่อออกจากระบบ';
+    chip.textContent=init;
     actions.appendChild(chip);
   });
 }
