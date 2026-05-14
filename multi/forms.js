@@ -211,7 +211,7 @@ function summaryBlock(vatRate,vatPercent,discount,color,vatEnabled){
 }
 
 // company strip at top of modal — multi system: with issuer dropdown
-function companyStrip(set,issuerId){
+function companyStrip(set,issuerId,docHasBank){
   const d=document.createElement('div');d.className='co-strip';d.id='co-strip-wrap';
   d.innerHTML='<div id="co-strip-inner" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0"></div>';
   // populate async
@@ -228,6 +228,8 @@ function companyStrip(set,issuerId){
     const hidden=document.createElement('input');hidden.type='hidden';hidden.id='f-issuer-id';hidden.value=chosenId;
     d.appendChild(hidden);
     _renderCoStrip(chosen);
+    // auto-fill bank fields from chosen company (only on initial render of new doc)
+    if(!docHasBank&&chosenId)_fillBankFromCompany(chosen);
     // add dropdown if multiple companies exist
     if(cos.length>1){
       const sel=document.createElement('select');
@@ -238,14 +240,27 @@ function companyStrip(set,issuerId){
         if(String(c.id)===chosenId)o.selected=true;
         sel.appendChild(o);
       });
-      sel.addEventListener('change',async()=>{
+      sel.addEventListener('change',()=>{
         const co=cos.find(c=>String(c.id)===sel.value);
-        if(co){_renderCoStrip(co);document.getElementById('f-issuer-id').value=String(co.id);}
+        if(co){
+          _renderCoStrip(co);
+          document.getElementById('f-issuer-id').value=String(co.id);
+          _fillBankFromCompany(co); // sync bank fields when issuer changes
+        }
       });
       d.appendChild(sel);
     }
   })();
   return d;
+}
+
+function _fillBankFromCompany(co){
+  const b=document.getElementById('f-bank');
+  const bn=document.getElementById('f-bankno');
+  const ba=document.getElementById('f-bankname');
+  if(b&&co.bankName)b.value=co.bankName;
+  if(bn&&co.bankAccount)bn.value=co.bankAccount;
+  if(ba&&co.bankAccountName)ba.value=co.bankAccountName;
 }
 
 function _renderCoStrip(set){
@@ -357,7 +372,7 @@ async function saveReceipt(id){
 function buildDocFormBody(bodyId,type,doc,custs,prods,set,docNum,prefill){
   const body=document.getElementById(bodyId);
   const color = type==='quotation'?'var(--quo)':type==='invoice'?'var(--inv)':'var(--rec)';
-  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id,!!doc?.bankName));
 
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
@@ -486,7 +501,7 @@ async function openBillingForm(id=null,preInvIds=null,prefillDoc=null){
     +'<button class="btn btn-doc btn-bil btn-save" onclick="saveBilling('+(id||'null')+')">'+I.save+' บันทึก</button></div>'
   );
   const body=document.getElementById('bbody');
-  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id,!!doc?.bankName));
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
     +'<div class="fg"><label class="fl">เลขที่เอกสาร</label><input class="fc tnum" id="f-docnum" value="'+esc(docNum)+'"></div>'
@@ -633,7 +648,7 @@ async function openBillingCombinedForm(id=null){
     +'<button class="btn btn-doc btn-blc btn-save" onclick="saveBillingCombined('+(id||'null')+')">'+I.save+' บันทึก</button></div>'
   );
   const body=document.getElementById('bcbody');
-  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id,!!doc?.bankName));
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
     +'<div class="fg"><label class="fl">เลขที่เอกสาร</label><input class="fc tnum" id="f-docnum" value="'+esc(docNum)+'"></div>'
