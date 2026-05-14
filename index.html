@@ -161,6 +161,8 @@ async function seedIfEmpty(){
 }
 
 async function loadAppForUser(){
+  // defensive: ensure body scroll is never locked at app boot
+  document.body.style.overflow='';
   await initDB();
   const ex=await dbGet('settings','company');
   if(!ex)await dbPut('settings',DEF_SET);

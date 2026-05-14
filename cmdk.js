@@ -29,8 +29,9 @@ function openCmdK(){
 }
 function closeCmdK(){
   const o=document.getElementById('cmdk-ov');
-  if(o){o.style.animation='overlayIn .15s reverse';setTimeout(()=>o.remove(),140);}
-  document.body.style.overflow='';
+  if(o){o.style.animation='overlayIn .15s reverse';setTimeout(()=>{try{o.remove();}catch(e){}},140);}
+  // unlock body scroll only if no modal is still open
+  if(!document.getElementById('ov'))document.body.style.overflow='';
 }
 
 async function renderCmdK(q,keepHL){

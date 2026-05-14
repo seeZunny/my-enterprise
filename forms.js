@@ -350,45 +350,52 @@ function buildDocFormBody(bodyId,type,doc,custs,prods,set,docNum,prefill){
 
 async function saveDocGeneric(type,store,id,after){
   lockSaveBtn();
-  const items=getItemsFromDOM();_doCalc();
-  const docNum=id?document.getElementById('f-docnum').value:await nextDocNum(type);
-  const data={
-    docNumber:docNum,
-    docDate:document.getElementById('f-docdate').value,
-    ref:document.getElementById('f-ref').value,
-    customerId:document.getElementById('f-cust').value,
-    customerName:document.getElementById('f-cname').value.trim(),
-    customerTax:document.getElementById('f-ctax').value.trim(),
-    customerAddress:document.getElementById('f-caddr').value.trim(),
-    note:document.getElementById('f-note').value,
-    vatPercent:window._app.vatPercent,
-    discount:window._app.discount,
-    items,
-    subtotal:window._app.sub,
-    vat:window._app.vat,
-    total:window._app.tot,
-    type,
-    createdAt:new Date().toISOString(),
-  };
-  if(type==='receipt'){
-    data.bankName=document.getElementById('f-bank').value;
-    data.bankAccount=document.getElementById('f-bankno').value;
-    data.bankAccountName=document.getElementById('f-bankname').value;
-    data.payMethod=document.getElementById('f-paymethod').value;
+  try{
+    const items=getItemsFromDOM();_doCalc();
+    const docNum=id?document.getElementById('f-docnum').value:await nextDocNum(type);
+    const data={
+      docNumber:docNum,
+      docDate:document.getElementById('f-docdate').value,
+      ref:document.getElementById('f-ref').value,
+      customerId:document.getElementById('f-cust').value,
+      customerName:document.getElementById('f-cname').value.trim(),
+      customerTax:document.getElementById('f-ctax').value.trim(),
+      customerAddress:document.getElementById('f-caddr').value.trim(),
+      note:document.getElementById('f-note').value,
+      vatPercent:window._app.vatPercent,
+      discount:window._app.discount,
+      items,
+      subtotal:window._app.sub,
+      vat:window._app.vat,
+      total:window._app.tot,
+      type,
+      createdAt:new Date().toISOString(),
+    };
+    if(type==='receipt'){
+      data.bankName=document.getElementById('f-bank').value;
+      data.bankAccount=document.getElementById('f-bankno').value;
+      data.bankAccountName=document.getElementById('f-bankname').value;
+      data.payMethod=document.getElementById('f-paymethod').value;
+    }
+    if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
+    if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');return;}
+
+    // remember customer/partner address
+    const newCustId=await rememberCustomer({
+      name:data.customerName, taxId:data.customerTax,
+      address:data.customerAddress, phone:'', email:'',
+    });
+    if(!data.customerId&&newCustId)data.customerId=String(newCustId);
+
+    if(id){data.id=id;await dbPut(store,data);toast('แก้ไขเอกสารสำเร็จ');}
+    else{await dbAdd(store,data);toast('บันทึกสำเร็จ — '+data.docNumber);}
+    _invalidateMaxCache();closeModal();if(after)after();
+  }catch(e){
+    console.error('saveDocGeneric error',e);
+    toast('บันทึกล้มเหลว: '+(e.message||e),'err');
+  }finally{
+    unlockSaveBtn();
   }
-  if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');unlockSaveBtn();return;}
-  if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');unlockSaveBtn();return;}
-
-  // remember customer/partner address
-  const newCustId=await rememberCustomer({
-    name:data.customerName, taxId:data.customerTax,
-    address:data.customerAddress, phone:'', email:'',
-  });
-  if(!data.customerId&&newCustId)data.customerId=String(newCustId);
-
-  if(id){data.id=id;await dbPut(store,data);toast('แก้ไขเอกสารสำเร็จ');}
-  else{await dbAdd(store,data);toast('บันทึกสำเร็จ — '+data.docNumber);}
-  _invalidateMaxCache();closeModal();if(after)after();
 }
 
 // ============================================================
@@ -508,27 +515,34 @@ function calcBilTotal(){
 
 async function saveBilling(id){
   lockSaveBtn();
-  const invoiceIds=[...document.querySelectorAll('#bil-list .inv-row.checked')].map(r=>parseInt(r.dataset.id,10));
-  calcBilTotal();
-  const docNum=id?document.getElementById('f-docnum').value:await nextDocNum('billing');
-  const data={
-    docNumber:docNum,docDate:document.getElementById('f-docdate').value,
-    paymentDate:document.getElementById('f-paydate').value||null,
-    customerId:document.getElementById('f-cust').value,
-    customerName:document.getElementById('f-cname').value.trim(),
-    customerAddress:document.getElementById('f-caddr').value.trim(),
-    note:document.getElementById('f-note').value,
-    invoiceIds,invoiceCount:invoiceIds.length,
-    total:window._app.blTot||0,type:'billing',createdAt:new Date().toISOString(),
-  };
-  if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');unlockSaveBtn();return;}
-  if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');unlockSaveBtn();return;}
-  if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');unlockSaveBtn();return;}
-  const newCustId=await rememberCustomer({name:data.customerName,address:data.customerAddress});
-  if(!data.customerId&&newCustId)data.customerId=String(newCustId);
-  if(id){data.id=id;await dbPut('billings',data);toast('แก้ไขสำเร็จ');}
-  else{await dbAdd('billings',data);toast('บันทึกสำเร็จ — '+data.docNumber);}
-  _invalidateMaxCache();closeModal();navigate('billing');
+  try{
+    const invoiceIds=[...document.querySelectorAll('#bil-list .inv-row.checked')].map(r=>parseInt(r.dataset.id,10));
+    calcBilTotal();
+    const docNum=id?document.getElementById('f-docnum').value:await nextDocNum('billing');
+    const data={
+      docNumber:docNum,docDate:document.getElementById('f-docdate').value,
+      paymentDate:document.getElementById('f-paydate').value||null,
+      customerId:document.getElementById('f-cust').value,
+      customerName:document.getElementById('f-cname').value.trim(),
+      customerAddress:document.getElementById('f-caddr').value.trim(),
+      note:document.getElementById('f-note').value,
+      invoiceIds,invoiceCount:invoiceIds.length,
+      total:window._app.blTot||0,type:'billing',createdAt:new Date().toISOString(),
+    };
+    if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
+    if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');return;}
+    if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');return;}
+    const newCustId=await rememberCustomer({name:data.customerName,address:data.customerAddress});
+    if(!data.customerId&&newCustId)data.customerId=String(newCustId);
+    if(id){data.id=id;await dbPut('billings',data);toast('แก้ไขสำเร็จ');}
+    else{await dbAdd('billings',data);toast('บันทึกสำเร็จ — '+data.docNumber);}
+    _invalidateMaxCache();closeModal();navigate('billing');
+  }catch(e){
+    console.error('saveBilling error',e);
+    toast('บันทึกล้มเหลว: '+(e.message||e),'err');
+  }finally{
+    unlockSaveBtn();
+  }
 }
 
 // ============================================================
@@ -584,22 +598,29 @@ function calcBcTotal(){
 
 async function saveBillingCombined(id){
   lockSaveBtn();
-  const invoiceIds=[...document.querySelectorAll('#bc-list .inv-row.checked')].map(r=>parseInt(r.dataset.id,10));
-  calcBcTotal();
-  const docNum=id?document.getElementById('f-docnum').value:await nextDocNum('billing_combined');
-  const data={
-    docNumber:docNum,docDate:document.getElementById('f-docdate').value,
-    paymentDate:document.getElementById('f-paydate').value||null,
-    customerId:document.getElementById('f-cust').value,
-    customerName:document.getElementById('f-cname').value.trim()||'(วางบิลรวมหลายลูกค้า)',
-    customerAddress:document.getElementById('f-caddr').value.trim(),
-    note:document.getElementById('f-note').value,
-    invoiceIds,invoiceCount:invoiceIds.length,
-    total:window._app.bcTot||0,type:'billing_combined',createdAt:new Date().toISOString(),
-  };
-  if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');unlockSaveBtn();return;}
-  if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');unlockSaveBtn();return;}
-  if(id){data.id=id;await dbPut('billing_combined',data);toast('แก้ไขสำเร็จ');}
-  else{await dbAdd('billing_combined',data);toast('บันทึกสำเร็จ — '+data.docNumber);}
-  _invalidateMaxCache();closeModal();navigate('billing-combined');
+  try{
+    const invoiceIds=[...document.querySelectorAll('#bc-list .inv-row.checked')].map(r=>parseInt(r.dataset.id,10));
+    calcBcTotal();
+    const docNum=id?document.getElementById('f-docnum').value:await nextDocNum('billing_combined');
+    const data={
+      docNumber:docNum,docDate:document.getElementById('f-docdate').value,
+      paymentDate:document.getElementById('f-paydate').value||null,
+      customerId:document.getElementById('f-cust').value,
+      customerName:document.getElementById('f-cname').value.trim()||'(วางบิลรวมหลายลูกค้า)',
+      customerAddress:document.getElementById('f-caddr').value.trim(),
+      note:document.getElementById('f-note').value,
+      invoiceIds,invoiceCount:invoiceIds.length,
+      total:window._app.bcTot||0,type:'billing_combined',createdAt:new Date().toISOString(),
+    };
+    if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
+    if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');return;}
+    if(id){data.id=id;await dbPut('billing_combined',data);toast('แก้ไขสำเร็จ');}
+    else{await dbAdd('billing_combined',data);toast('บันทึกสำเร็จ — '+data.docNumber);}
+    _invalidateMaxCache();closeModal();navigate('billing-combined');
+  }catch(e){
+    console.error('saveBillingCombined error',e);
+    toast('บันทึกล้มเหลว: '+(e.message||e),'err');
+  }finally{
+    unlockSaveBtn();
+  }
 }

@@ -253,10 +253,19 @@ function openModal(html){
 }
 function closeModal(){
   const m=document.getElementById('ov');
-  if(m){m.style.animation='overlayIn .15s reverse';setTimeout(()=>m.remove(),140);}
-  document.body.style.overflow='';
+  if(m){m.style.animation='overlayIn .15s reverse';setTimeout(()=>{try{m.remove();}catch(e){}},140);}
+  // unlock body scroll only if no other modal/cmdk overlay is still open
+  const hasCmdk=document.getElementById('cmdk-overlay')||document.getElementById('cmdk-ov');
+  if(!hasCmdk)document.body.style.overflow='';
   document.querySelectorAll('.ac-pop').forEach(p=>p.remove());
 }
+// Defensive: ensure body scroll is never permanently locked
+function ensureScrollUnlocked(){
+  const hasModal=document.getElementById('ov');
+  const hasCmdk=document.getElementById('cmdk-overlay')||document.getElementById('cmdk-ov');
+  if(!hasModal&&!hasCmdk)document.body.style.overflow='';
+}
+window.ensureScrollUnlocked=ensureScrollUnlocked;
 function lockSaveBtn(){
   const b=document.querySelector('.mf .btn-save');
   if(b&&!b.disabled){b.disabled=true;b._ot=b.innerHTML;b.innerHTML='<span class="spin"></span> กำลังบันทึก...';b.style.opacity='.7';}
