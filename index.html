@@ -231,8 +231,13 @@ async function init(){
   });
   window._sb=_sb;
   _sb.auth.onAuthStateChange((evt)=>{
-    if(evt==='SIGNED_OUT')location.reload();
-    if(evt==='SIGNED_IN')location.reload();
+    if(evt==='SIGNED_OUT'){location.reload();return;}
+    // Only reload on SIGNED_IN if we are currently showing the auth overlay
+    // (i.e. user just submitted login here). Otherwise this fires on every page load
+    // when a session already exists -> infinite reload loop.
+    if(evt==='SIGNED_IN'&&document.getElementById('auth-ov').style.display==='flex'){
+      location.reload();
+    }
   });
   const {data:{session}}=await _sb.auth.getSession();
   if(!session){
