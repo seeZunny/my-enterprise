@@ -2,8 +2,9 @@
 // PRINT / PREVIEW — A4 document HTML generator
 // ============================================================
 const DOC_LABEL={quotations:'ใบเสนอราคา', invoices:'ใบกำกับภาษี / ใบส่งของ', receipts:'ใบเสร็จรับเงิน', billings:'ใบวางบิล', billing_combined:'ใบวางบิลรวม'};
-const DOC_COLOR={quotations:'#f59e0b', invoices:'#6366f1', receipts:'#10b981', billings:'#0ea5e9', billing_combined:'#8b5cf6'};
-const DOC_SOFT={quotations:'#fef3c7', invoices:'#e0e7ff', receipts:'#d1fae5', billings:'#e0f2fe', billing_combined:'#ede9fe'};
+// /multi/ system — unified indigo palette (vs /docs/ which uses varied accent colors)
+const DOC_COLOR={quotations:'#5b6cb8', invoices:'#3b3f6b', receipts:'#4a5784', billings:'#2a2e52', billing_combined:'#1f2240'};
+const DOC_SOFT={quotations:'#e6e9f3', invoices:'#dee0ed', receipts:'#e3e6ef', billings:'#d4d7e6', billing_combined:'#cdd0df'};
 
 function buildDocHTML(doc,set,store,invRefs){
   const color=DOC_COLOR[store]||'#0f172a';
@@ -14,7 +15,7 @@ function buildDocHTML(doc,set,store,invRefs){
 
   const logoHTML = set.logo
     ? '<img src="'+esc(set.logo)+'" style="max-height:60px;max-width:140px;object-fit:contain">'
-    : '<div style="width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#14b8a6,#0d9488);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;letter-spacing:-.02em">'+esc((set.name||'M').charAt(0))+'</div>';
+    : '<div style="width:54px;height:54px;border-radius:12px;background:linear-gradient(135deg,#3b3f6b,#2a2e52);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;letter-spacing:-.02em">'+esc((set.name||'M').charAt(0))+'</div>';
 
   function pageHTML(label){
     let bodyHTML='';
@@ -32,8 +33,8 @@ function buildDocHTML(doc,set,store,invRefs){
       ).join('');
 
       const bankInfo = store==='receipts' ? (
-        '<div style="margin-top:14px;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:12px 14px;font-size:11.5px">'
-        +'<div style="font-weight:700;color:#059669;margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase;font-size:10.5px">รายละเอียดการรับชำระ</div>'
+        '<div style="margin-top:14px;background:#eef0f7;border:1px solid #c7cce0;border-radius:10px;padding:12px 14px;font-size:11.5px">'
+        +'<div style="font-weight:700;color:#3b3f6b;margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase;font-size:10.5px">รายละเอียดการรับชำระ</div>'
         +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;color:#1e293b">'
         +'<div><div style="color:#64748b;font-size:10px">ธนาคาร</div><b>'+esc(doc.bankName||'-')+'</b></div>'
         +'<div><div style="color:#64748b;font-size:10px">เลขบัญชี</div><b>'+esc(doc.bankAccount||'-')+'</b></div>'
@@ -98,13 +99,14 @@ function buildDocHTML(doc,set,store,invRefs){
     }
 
     const stampHTML = label==='สำเนา'
-      ? '<div style="position:absolute;top:42px;right:38px;transform:rotate(-12deg);font-size:54px;font-weight:900;color:rgba(245,158,11,.14);letter-spacing:.04em;pointer-events:none;border:6px solid rgba(245,158,11,.14);padding:8px 24px;border-radius:14px">COPY</div>'
+      ? '<div style="position:absolute;top:42px;right:38px;transform:rotate(-12deg);font-size:54px;font-weight:900;color:rgba(59,63,107,.14);letter-spacing:.04em;pointer-events:none;border:6px solid rgba(59,63,107,.14);padding:8px 24px;border-radius:14px">COPY</div>'
       : '';
 
     return '<div class="a4">'
       +stampHTML
-      // ribbon
-      +'<div style="height:5px;background:linear-gradient(90deg,'+color+' 0%,'+color+'aa 50%, transparent 100%);border-radius:3px;margin-bottom:18px"></div>'
+      // ribbon — multi: dual-tone indigo bar
+      +'<div style="height:6px;background:linear-gradient(90deg,'+color+' 0%, #3b3f6b 60%, transparent 100%);border-radius:3px;margin-bottom:6px"></div>'
+      +'<div style="font-size:9.5px;color:#7a6f63;letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:14px">Multi Documents</div>'
       // header
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:20px">'
       +'<div style="display:flex;align-items:flex-start;gap:14px;flex:1">'
