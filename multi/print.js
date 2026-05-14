@@ -58,7 +58,7 @@ function buildDocHTML(doc,set,store,invRefs){
         +'</div>'
         +'<div style="width:260px;font-size:12px">'
         +'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569"><span>ราคารวม</span><span>'+fmoney(doc.subtotal)+'</span></div>'
-        +'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569"><span>ภาษีมูลค่าเพิ่ม '+(doc.vatPercent||0)+'%</span><span>'+fmoney(doc.vat)+'</span></div>'
+        +(doc.vatEnabled!==false&&(doc.vat>0||doc.vatPercent>0)?'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569"><span>ภาษีมูลค่าเพิ่ม '+(doc.vatPercent||0)+'%</span><span>'+fmoney(doc.vat)+'</span></div>':'')
         +(doc.discount>0?'<div style="display:flex;justify-content:space-between;padding:4px 0;color:#475569"><span>ส่วนลด</span><span>-'+fmoney(doc.discount)+'</span></div>':'')
         +'<div style="display:flex;justify-content:space-between;padding:10px 0 4px;margin-top:4px;border-top:2px solid '+color+';font-size:14.5px;font-weight:700;color:'+color+'"><span>ยอดสุทธิ</span><span>'+fmoney(doc.total)+'</span></div>'
         +'<div style="font-size:10.5px;color:#64748b;font-style:italic;margin-top:2px">('+numToThai(doc.total||0)+')</div>'

@@ -138,17 +138,24 @@ function _doCalc(){
     const p=parseFloat(document.getElementById('ip-'+idx)?.value)||0;
     sub+=q*p;
   });
-  const vatP=parseFloat(document.getElementById('f-vatp')?.value)||0;
+  const vatChk=document.getElementById('f-vat-en');
+  const vatEnabled=vatChk?vatChk.checked:false;
+  const vatP=vatEnabled?(parseFloat(document.getElementById('f-vatp')?.value)||0):0;
   const dis=parseFloat(document.getElementById('f-dis')?.value)||0;
-  const vat=sub*vatP/100;
+  const vat=vatEnabled?sub*vatP/100:0;
   const tot=sub+vat-dis;
   const g=id=>document.getElementById(id);
   if(g('s-sub'))g('s-sub').textContent='฿'+fmoney(sub);
   if(g('s-vat'))g('s-vat').textContent='฿'+fmoney(vat);
   if(g('s-dis'))g('s-dis').textContent='-฿'+fmoney(dis);
   if(g('s-tot'))g('s-tot').textContent='฿'+fmoney(tot);
+  // toggle VAT row visibility
+  const vatRow=g('s-vat-row');
+  if(vatRow)vatRow.style.opacity=vatEnabled?'1':'.4';
+  const vatPInp=g('f-vatp');
+  if(vatPInp)vatPInp.disabled=!vatEnabled;
   window._app.sub=sub;window._app.vat=vat;window._app.tot=tot;
-  window._app.vatPercent=vatP;window._app.discount=dis;
+  window._app.vatPercent=vatP;window._app.discount=dis;window._app.vatEnabled=vatEnabled;
 }
 
 function getItemsFromDOM(){
@@ -187,11 +194,17 @@ function buildItemsSection(container,items,products){
   container.appendChild(wrap);
 }
 
-function summaryBlock(vatRate,vatPercent,discount,color){
+function summaryBlock(vatRate,vatPercent,discount,color,vatEnabled){
+  // multi system: VAT off by default (since this is "บิลรวมไม่ VAT")
+  const ven=vatEnabled===undefined?false:!!vatEnabled;
   const div=document.createElement('div');div.className='sumbox';
   div.innerHTML=
     '<div class="sumrow"><span class="text-2">ยอดก่อนภาษี</span><span id="s-sub" class="tnum">฿0.00</span></div>'
-    +'<div class="sumrow"><span class="text-2">ภาษีมูลค่าเพิ่ม <input type="number" id="f-vatp" value="'+(vatPercent??vatRate)+'" min="0" max="100" oninput="calcTotal()"> %</span><span id="s-vat" class="tnum">฿0.00</span></div>'
+    +'<div id="s-vat-row" class="sumrow" style="opacity:'+(ven?'1':'.4')+'">'
+      +'<span class="text-2"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">'
+      +'<input type="checkbox" id="f-vat-en" '+(ven?'checked':'')+' onchange="calcTotal()" style="cursor:pointer"> ภาษีมูลค่าเพิ่ม</label>'
+      +' <input type="number" id="f-vatp" value="'+(vatPercent??vatRate??7)+'" min="0" max="100" oninput="calcTotal()" '+(ven?'':'disabled')+'> %</span>'
+      +'<span id="s-vat" class="tnum">฿0.00</span></div>'
     +'<div class="sumrow"><span class="text-2">ส่วนลด <input type="number" id="f-dis" value="'+(discount||0)+'" min="0" oninput="calcTotal()"></span><span id="s-dis" class="tnum">-฿0.00</span></div>'
     +'<div class="sumrow tot"><span>ยอดรวมสุทธิ</span><span id="s-tot" class="tnum" style="color:'+color+'">฿0.00</span></div>';
   return div;
@@ -343,7 +356,7 @@ function buildDocFormBody(bodyId,type,doc,custs,prods,set,docNum,prefill){
   const noteDiv=document.createElement('div');
   noteDiv.innerHTML='<div class="fg"><label class="fl">หมายเหตุ</label><textarea class="fc" id="f-note" rows="3" placeholder="หมายเหตุเพิ่มเติม">'+esc(doc?.note||'')+'</textarea></div>';
   sumRow.appendChild(noteDiv);
-  sumRow.appendChild(summaryBlock(set.vatRate,doc?.vatPercent,doc?.discount,color));
+  sumRow.appendChild(summaryBlock(set.vatRate,doc?.vatPercent,doc?.discount,color,doc?.vatEnabled));
   body.appendChild(sumRow);
   setTimeout(calcTotal,50);
 }
@@ -363,6 +376,7 @@ async function saveDocGeneric(type,store,id,after){
       customerAddress:document.getElementById('f-caddr').value.trim(),
       note:document.getElementById('f-note').value,
       vatPercent:window._app.vatPercent,
+      vatEnabled:!!window._app.vatEnabled,
       discount:window._app.discount,
       items,
       subtotal:window._app.sub,
