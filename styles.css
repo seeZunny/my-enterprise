@@ -103,7 +103,13 @@ a{color:inherit;text-decoration:none}
 }
 .tn-brand{
   display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);
-  flex-shrink:0;cursor:pointer;
+  flex-shrink:1;cursor:pointer;min-width:0;max-width:260px;
+  padding-right:18px;border-right:1px solid var(--rule);margin-right:6px;
+}
+.tn-brand > div:not(.tn-mark){min-width:0;flex:1;overflow:hidden}
+.tn-brand-name{
+  font-size:14px;font-weight:600;letter-spacing:-.01em;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;
 }
 .tn-mark{
   width:36px;height:36px;border-radius:9px;
@@ -372,7 +378,7 @@ tbody tr:last-child td{border-bottom:none}
    STATS — big serif numbers
    ============================================================ */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin-bottom:36px;border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);overflow:hidden}
-.dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.dash-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:24px}
 .dash-grid-eq{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:860px){.dash-grid,.dash-grid-eq{grid-template-columns:1fr}}
 .stat{
@@ -716,7 +722,7 @@ tbody tr:last-child td{border-bottom:none}
   .btn-cmdk{display:none}
   .tn-brand-sub{display:none}
   .tn-brand-name{font-size:13.5px;font-weight:600}
-  .tn-brand{min-width:0;flex:1;overflow:hidden;gap:10px}
+  .tn-brand{min-width:0;flex:1;overflow:hidden;gap:10px;max-width:none;border-right:none;padding-right:0;margin-right:0}
   .tn-brand-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tn-mark{width:32px;height:32px;font-size:18px;border-radius:8px}
   .btn-create .bc-label{display:none}
