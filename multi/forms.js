@@ -210,12 +210,64 @@ function summaryBlock(vatRate,vatPercent,discount,color,vatEnabled){
   return div;
 }
 
-// company strip at top of modal
-function companyStrip(set){
-  const d=document.createElement('div');d.className='co-strip';
-  const logo=set.logo?'<img src="'+esc(set.logo)+'">':'<div style="color:var(--accent);font-weight:700">'+esc((set.name||'M').charAt(0))+'</div>';
-  d.innerHTML='<div class="co-strip-logo">'+logo+'</div><div style="min-width:0"><div class="co-strip-name">'+esc(set.name)+'</div><div class="co-strip-meta">'+esc(set.address)+'</div><div class="co-strip-meta">โทร: '+esc(set.phone)+' · เลขผู้เสียภาษี: '+esc(set.taxId)+'</div></div>';
+// company strip at top of modal — multi system: with issuer dropdown
+function companyStrip(set,issuerId){
+  const d=document.createElement('div');d.className='co-strip';d.id='co-strip-wrap';
+  d.innerHTML='<div id="co-strip-inner" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0"></div>';
+  // populate async
+  (async()=>{
+    const cos=await dbAll('companies');
+    let chosen=set;
+    let chosenId='';
+    if(cos.length){
+      // pick selected id, or first company, or settings
+      const sel=cos.find(c=>String(c.id)===String(issuerId))||cos[0];
+      if(sel){chosen=sel;chosenId=String(sel.id);}
+    }
+    // hidden input to remember chosen id
+    const hidden=document.createElement('input');hidden.type='hidden';hidden.id='f-issuer-id';hidden.value=chosenId;
+    d.appendChild(hidden);
+    _renderCoStrip(chosen);
+    // add dropdown if multiple companies exist
+    if(cos.length>1){
+      const sel=document.createElement('select');
+      sel.className='fc';sel.id='f-issuer-sel';
+      sel.style.cssText='margin-left:auto;max-width:240px;font-size:12.5px;padding:6px 10px';
+      cos.forEach(c=>{
+        const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name||'-';
+        if(String(c.id)===chosenId)o.selected=true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change',async()=>{
+        const co=cos.find(c=>String(c.id)===sel.value);
+        if(co){_renderCoStrip(co);document.getElementById('f-issuer-id').value=String(co.id);}
+      });
+      d.appendChild(sel);
+    }
+  })();
   return d;
+}
+
+function _renderCoStrip(set){
+  const inner=document.getElementById('co-strip-inner');if(!inner)return;
+  const logo=set.logo?'<img src="'+esc(set.logo)+'">':'<div style="color:var(--accent);font-weight:700">'+esc((set.name||'M').charAt(0))+'</div>';
+  inner.innerHTML='<div class="co-strip-logo">'+logo+'</div><div style="min-width:0;flex:1"><div class="co-strip-name">'+esc(set.name||'')+'</div><div class="co-strip-meta">'+esc(set.address||'')+'</div><div class="co-strip-meta">โทร: '+esc(set.phone||'-')+' · เลขผู้เสียภาษี: '+esc(set.taxId||'-')+'</div></div>';
+}
+
+// helper: get current issuer snapshot from form
+async function _getIssuerSnapshot(set){
+  const idEl=document.getElementById('f-issuer-id');
+  const id=idEl?idEl.value:'';
+  if(!id)return null; // use default settings
+  const co=await dbGet('companies',Number(id));
+  if(!co)return null;
+  // snapshot only the relevant fields (so future edits don't change historical docs)
+  return {
+    id:co.id, name:co.name, address:co.address, taxId:co.taxId,
+    phone:co.phone, email:co.email,
+    bankName:co.bankName, bankAccount:co.bankAccount, bankAccountName:co.bankAccountName,
+    logo:co.logo,
+  };
 }
 
 // customer dropdown
@@ -305,7 +357,7 @@ async function saveReceipt(id){
 function buildDocFormBody(bodyId,type,doc,custs,prods,set,docNum,prefill){
   const body=document.getElementById(bodyId);
   const color = type==='quotation'?'var(--quo)':type==='invoice'?'var(--inv)':'var(--rec)';
-  body.appendChild(companyStrip(set));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
 
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
@@ -385,6 +437,9 @@ async function saveDocGeneric(type,store,id,after){
       type,
       createdAt:new Date().toISOString(),
     };
+    // multi-company: save issuer snapshot if a company is selected
+    const issuer=await _getIssuerSnapshot();
+    if(issuer)data.issuedBy=issuer;
     if(type==='receipt'){
       data.bankName=document.getElementById('f-bank').value;
       data.bankAccount=document.getElementById('f-bankno').value;
@@ -431,7 +486,7 @@ async function openBillingForm(id=null,preInvIds=null,prefillDoc=null){
     +'<button class="btn btn-doc btn-bil btn-save" onclick="saveBilling('+(id||'null')+')">'+I.save+' บันทึก</button></div>'
   );
   const body=document.getElementById('bbody');
-  body.appendChild(companyStrip(set));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
     +'<div class="fg"><label class="fl">เลขที่เอกสาร</label><input class="fc tnum" id="f-docnum" value="'+esc(docNum)+'"></div>'
@@ -543,6 +598,8 @@ async function saveBilling(id){
       invoiceIds,invoiceCount:invoiceIds.length,
       total:window._app.blTot||0,type:'billing',createdAt:new Date().toISOString(),
     };
+    const issuer=await _getIssuerSnapshot();
+    if(issuer)data.issuedBy=issuer;
     if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
     if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');return;}
     if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');return;}
@@ -576,7 +633,7 @@ async function openBillingCombinedForm(id=null){
     +'<button class="btn btn-doc btn-blc btn-save" onclick="saveBillingCombined('+(id||'null')+')">'+I.save+' บันทึก</button></div>'
   );
   const body=document.getElementById('bcbody');
-  body.appendChild(companyStrip(set));
+  body.appendChild(companyStrip(set,doc?.issuedBy?.id));
   body.insertAdjacentHTML('beforeend',
     '<div class="fr fr3">'
     +'<div class="fg"><label class="fl">เลขที่เอกสาร</label><input class="fc tnum" id="f-docnum" value="'+esc(docNum)+'"></div>'
@@ -626,6 +683,8 @@ async function saveBillingCombined(id){
       invoiceIds,invoiceCount:invoiceIds.length,
       total:window._app.bcTot||0,type:'billing_combined',createdAt:new Date().toISOString(),
     };
+    const issuer=await _getIssuerSnapshot();
+    if(issuer)data.issuedBy=issuer;
     if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
     if(!invoiceIds.length){toast('กรุณาเลือกใบกำกับอย่างน้อย 1 ฉบับ','err');return;}
     if(id){data.id=id;await dbPut('billing_combined',data);toast('แก้ไขสำเร็จ');}

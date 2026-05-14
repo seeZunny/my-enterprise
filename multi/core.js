@@ -10,9 +10,10 @@ const STORE_KEY={
   quotations:'id', invoices:'id', receipts:'id',
   billings:'id', billing_combined:'id',
   doc_counters:'type', address_book:'id',
+  companies:'id', // multi: list of issuer companies (multi-company)
 };
 const STORE_LIST=Object.keys(STORE_KEY);
-const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','address_book']);
+const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','address_book','companies']);
 
 const _mem={};         // _mem[store] = { [key]: record }
 const _autoSeq={};     // _autoSeq[store] = next numeric id

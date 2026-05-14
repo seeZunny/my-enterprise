@@ -37,7 +37,8 @@ const NAV=[
     {key:'accounting',label:'ภาพรวมการเงิน',icon:'wallet'},
   ]},
   {sec:'ระบบ',items:[
-    {key:'settings',label:'ตั้งค่าบริษัท',icon:'settings'},
+    {key:'companies',label:'บริษัทผู้ออก',icon:'users'},
+    {key:'settings',label:'ตั้งค่าระบบ',icon:'settings'},
     {key:'backup',label:'Backup & Restore',icon:'database'},
   ]},
 ];
@@ -160,9 +161,115 @@ async function navigate(page){
     quotation:pgQuotation, invoice:pgInvoice, receipt:pgReceipt,
     billing:pgBilling, 'billing-combined':pgBillingCombined,
     customers:pgCustomers, inventory:pgInventory, accounting:pgAccounting,
+    companies:pgCompanies,
     settings:pgSettings, backup:pgBackup,
   };
   if(pages[page])await pages[page]();
+}
+
+// ============================================================
+// COMPANIES PAGE — manage issuer companies (multi-company)
+// ============================================================
+async function pgCompanies(){
+  const c=document.getElementById('content');c.innerHTML='';
+  c.insertAdjacentHTML('beforeend','<div class="ph"><div><div class="pt">บริษัท<em>ผู้ออก</em></div><div class="ps">จัดการบริษัทผู้ออกเอกสาร — ออกเอกสารในนามบริษัทไหนก็ได้</div></div><div><button class="btn btn-accent" onclick="openCompanyForm()">'+I.plus+' เพิ่มบริษัท</button></div></div>');
+  const list=await dbAll('companies');
+  if(!list.length){
+    c.insertAdjacentHTML('beforeend','<div class="empty"><div class="empty-i">'+I.users+'</div><div class="empty-t">ยังไม่มีบริษัทผู้ออก</div><div class="empty-s">เพิ่มบริษัทแรกของคุณเพื่อเริ่มออกเอกสารในนามนั้น</div></div>');
+    return;
+  }
+  const grid=document.createElement('div');grid.className='dash-grid-eq';
+  list.forEach(co=>{
+    const card=document.createElement('div');card.className='card';
+    card.innerHTML='<div class="card-body">'
+      +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
+      +'<div style="width:48px;height:48px;border-radius:11px;background:var(--copper);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:24px;overflow:hidden">'+(co.logo?'<img src="'+esc(co.logo)+'" style="width:100%;height:100%;object-fit:contain;background:#fff">':esc((co.name||'?').charAt(0)))+'</div>'
+      +'<div style="min-width:0;flex:1"><div style="font-weight:600;font-size:15px">'+esc(co.name||'-')+'</div>'
+      +'<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">เลขผู้เสียภาษี: '+esc(co.taxId||'-')+'</div></div>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--ink-2);line-height:1.55">'+esc(co.address||'-')+'</div>'
+      +'<div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">โทร: '+esc(co.phone||'-')+'  ·  '+esc(co.email||'-')+'</div>'
+      +'<div style="display:flex;gap:6px;margin-top:14px">'
+      +'<button class="btn btn-ghost" onclick="openCompanyForm('+co.id+')" style="flex:1">'+I.edit+' แก้ไข</button>'
+      +'<button class="btn btn-danger-soft" onclick="deleteCompany('+co.id+')">'+I.trash+'</button>'
+      +'</div></div>';
+    grid.appendChild(card);
+  });
+  c.appendChild(grid);
+}
+
+function openCompanyForm(id){
+  (async()=>{
+    const co=id?await dbGet('companies',id):{};
+    openModal(
+      '<div class="mh"><div class="mt"><div class="mt-icon">'+I.users+'</div>'+(id?'แก้ไขบริษัทผู้ออก':'เพิ่มบริษัทผู้ออก')+'</div>'
+      +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div>'
+      +'<div class="mb">'
+      +'<div class="fg"><label class="fl fl-req">ชื่อบริษัท</label><input class="fc" id="co-name" value="'+esc(co.name||'')+'" placeholder="บริษัท XXX จำกัด"></div>'
+      +'<div class="fg"><label class="fl">เลขประจำตัวผู้เสียภาษี</label><input class="fc tnum" id="co-tax" value="'+esc(co.taxId||'')+'" placeholder="0000000000000"></div>'
+      +'<div class="fg"><label class="fl">ที่อยู่</label><textarea class="fc" id="co-addr" rows="2">'+esc(co.address||'')+'</textarea></div>'
+      +'<div class="fr fr2">'
+      +'<div class="fg"><label class="fl">โทร</label><input class="fc" id="co-phone" value="'+esc(co.phone||'')+'"></div>'
+      +'<div class="fg"><label class="fl">อีเมล</label><input class="fc" id="co-email" value="'+esc(co.email||'')+'"></div>'
+      +'</div>'
+      +'<div class="fr fr3">'
+      +'<div class="fg"><label class="fl">ธนาคาร</label><input class="fc" id="co-bank" value="'+esc(co.bankName||'')+'"></div>'
+      +'<div class="fg"><label class="fl">เลขบัญชี</label><input class="fc tnum" id="co-bankno" value="'+esc(co.bankAccount||'')+'"></div>'
+      +'<div class="fg"><label class="fl">ชื่อบัญชี</label><input class="fc" id="co-bankname" value="'+esc(co.bankAccountName||'')+'"></div>'
+      +'</div>'
+      +'<div class="fg"><label class="fl">โลโก้</label>'
+      +'<div onclick="document.getElementById(\'co-li\').click()" style="border:2px dashed var(--rule);border-radius:10px;padding:18px;text-align:center;cursor:pointer">'
+      +(co.logo?'<img id="co-logo-prev" src="'+esc(co.logo)+'" style="max-height:80px;max-width:200px">':'<div id="co-logo-prev" style="color:var(--ink-3);font-size:12.5px">คลิกเพื่อเลือกโลโก้ (PNG/JPG)</div>')
+      +'</div>'
+      +'<input type="file" id="co-li" accept="image/*" style="display:none" onchange="onCoLogoSelect(this)"></div>'
+      +'</div>'
+      +'<div class="mf"><button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>'
+      +'<button class="btn btn-accent btn-save" onclick="saveCompany('+(id||'null')+')">'+I.save+' บันทึก</button></div>'
+    );
+    if(co.logo)window._coLogo=co.logo;else window._coLogo=null;
+  })();
+}
+
+function onCoLogoSelect(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    window._coLogo=e.target.result;
+    const p=document.getElementById('co-logo-prev');
+    if(p){p.outerHTML='<img id="co-logo-prev" src="'+e.target.result+'" style="max-height:80px;max-width:200px">';}
+  };
+  r.readAsDataURL(f);
+}
+
+async function saveCompany(id){
+  lockSaveBtn();
+  try{
+    const data={
+      name:document.getElementById('co-name').value.trim(),
+      taxId:document.getElementById('co-tax').value.trim(),
+      address:document.getElementById('co-addr').value.trim(),
+      phone:document.getElementById('co-phone').value.trim(),
+      email:document.getElementById('co-email').value.trim(),
+      bankName:document.getElementById('co-bank').value.trim(),
+      bankAccount:document.getElementById('co-bankno').value.trim(),
+      bankAccountName:document.getElementById('co-bankname').value.trim(),
+      logo:window._coLogo||null,
+      createdAt:new Date().toISOString(),
+    };
+    if(!data.name){toast('กรุณาระบุชื่อบริษัท','err');return;}
+    if(id){data.id=id;await dbPut('companies',data);toast('แก้ไขสำเร็จ');}
+    else{await dbAdd('companies',data);toast('เพิ่มบริษัทสำเร็จ');}
+    closeModal();window._coLogo=null;pgCompanies();
+  }catch(e){
+    toast('บันทึกล้มเหลว: '+(e.message||e),'err');
+  }finally{unlockSaveBtn();}
+}
+
+async function deleteCompany(id){
+  if(!confirm('ลบบริษัทนี้?\n\nเอกสารที่เคยออกในนามนี้ยังอยู่ครบ (เก็บ snapshot ไว้แล้ว)'))return;
+  await dbDel('companies',id);
+  toast('ลบเรียบร้อย','warn');
+  pgCompanies();
 }
 
 // ============================================================

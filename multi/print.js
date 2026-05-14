@@ -177,8 +177,10 @@ async function viewDocModal(store,id){
 }
 
 async function printDoc(store,id){
-  const[doc,set]=await Promise.all([dbGet(store,id),getSettings()]);
+  const[doc,settings]=await Promise.all([dbGet(store,id),getSettings()]);
   if(!doc){toast('ไม่พบเอกสาร','err');return;}
+  // multi-company: use saved issuer snapshot if present, else fall back to settings
+  const set=doc.issuedBy?{...settings,...doc.issuedBy}:settings;
   let invRefs=[];
   if(doc.invoiceIds?.length){
     const all=await dbAll('invoices');
