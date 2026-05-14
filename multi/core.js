@@ -119,7 +119,8 @@ function dbClear(s){
 // ============================================================
 // DOC NUMBERING — BL counter shared for billing + billing_combined
 // ============================================================
-const DOC_PFX={quotation:'QT',invoice:'INV',receipt:'RC',billing:'BL',billing_combined:'BL'};
+// /multi/ system uses 'M-' prefix to distinguish from /docs/ (e.g. M-QT-2569-0001)
+const DOC_PFX={quotation:'MQT',invoice:'MINV',receipt:'MRC',billing:'MBL',billing_combined:'MBL'};
 const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',billing:'billings',billing_combined:'billing_combined'};
 
 const _maxCache={};

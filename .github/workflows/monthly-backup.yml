@@ -1,0 +1,28 @@
+name: Monthly Backup
+
+on:
+  schedule:
+    # วันที่ 1 ของทุกเดือน 02:00 UTC = 09:00 ตามเวลาไทย
+    - cron: '0 2 1 * *'
+  workflow_dispatch: {}  # ให้กดรันเองได้จาก GitHub UI (ใช้ทดสอบ)
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run backup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BACKUP_EMAIL_TO: ${{ secrets.BACKUP_EMAIL_TO }}
+        run: node scripts/backup.mjs
