@@ -31,11 +31,14 @@ function _getSb(){
   return _sb;
 }
 
+function _appNS(){return window.APP_NAMESPACE||'docs';}
+
 async function initDB(){
   const sb=_getSb();
   const {data:s}=await sb.auth.getSession();
   if(!s||!s.session)throw new Error('ยังไม่ได้เข้าสู่ระบบ');
-  const {data,error}=await sb.from('app_store').select('store,data');
+  const app=_appNS();
+  const {data,error}=await sb.from('app_store').select('store,data').eq('app',app);
   if(error)throw new Error('โหลดข้อมูลล้มเหลว: '+error.message);
   STORE_LIST.forEach(s=>{_mem[s]={};_autoSeq[s]=1;});
   (data||[]).forEach(row=>{
@@ -64,9 +67,10 @@ async function _flush(store){
   if(!s||!s.session)return;
   const {error}=await sb.from('app_store').upsert({
     user_id:s.session.user.id,
+    app:_appNS(),
     store,
     data:arr,
-  },{onConflict:'user_id,store'});
+  },{onConflict:'user_id,app,store'});
   if(error){
     console.error('[sync]',store,error);
     if(typeof toast==='function')toast('Sync ล้มเหลว: '+error.message,'err');

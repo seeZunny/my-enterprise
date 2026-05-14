@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>เอกสาร · My Enterprise</title>
+<title>เลือกระบบ · My Enterprise</title>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -18,42 +18,119 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-  /* Auth overlay */
-  #auth-ov{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
-  .auth-card{max-width:420px;width:100%;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:36px 32px;box-shadow:var(--shadow-lg);text-align:center}
-  .auth-mark{width:54px;height:54px;border-radius:12px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:30px;margin:0 auto 18px}
-  .auth-card h1{font-family:var(--font-display);font-style:italic;font-size:32px;font-weight:400;margin:0 0 6px;color:var(--ink)}
-  .auth-card .auth-sub{font-size:13px;color:var(--ink-3);margin:0 0 24px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
-  .auth-card p.auth-desc{font-size:13.5px;color:var(--ink-2);margin:0 0 22px;line-height:1.55}
-  .auth-card input[type=email]{width:100%;padding:12px 14px;border:1px solid var(--rule-2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;transition:border-color var(--t-fast)}
-  .auth-card input[type=email]:focus{outline:none;border-color:var(--copper)}
-  .auth-card button{width:100%;margin-top:12px;padding:12px 16px;border:none;border-radius:8px;background:var(--ink);color:var(--paper);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity var(--t-fast)}
-  .auth-card button:hover{opacity:.85}
-  .auth-card button:disabled{opacity:.5;cursor:not-allowed}
-  #auth-msg{margin-top:14px;font-size:12.5px;min-height:16px}
-  #auth-msg.ok{color:#0a6b2f}
-  #auth-msg.err{color:#b3261e}
-  /* Sign-out chip in topnav — avatar only, hover shows full email tooltip */
-  .tn-user{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);font-weight:600;font-size:12px;text-transform:uppercase;cursor:pointer;transition:opacity var(--t-fast);user-select:none;flex-shrink:0;border:none}
-  .tn-user:hover{opacity:.8}
-  .tn-user-email{display:none}
+:root{
+  --paper:#fefcf7;--paper-2:#f8f4ec;--paper-3:#f1ebde;--paper-4:#e7dfcb;
+  --ink:#1c1815;--ink-2:#3a342e;--ink-3:#7a6f63;
+  --rule:#e7ddc7;--rule-2:#d4c8ad;
+  --copper:#a8472a;--copper-soft:#f4e6dc;
+  --indigo:#3b3f6b;--indigo-soft:#e8e9f1;
+  --shadow-lg:0 20px 50px -12px rgba(28,24,21,.18);
+  --t-fast:.18s ease;
+  --font:'Plus Jakarta Sans','IBM Plex Sans Thai',-apple-system,sans-serif;
+  --font-display:'Instrument Serif','IBM Plex Sans Thai',Georgia,serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:var(--paper);font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .05  0 0 0 .045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity:.7;mix-blend-mode:multiply;
+}
+
+#shell{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:24px 36px;max-width:1200px;width:100%;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:42px;height:42px;border-radius:11px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:24px;font-weight:400;letter-spacing:-.02em;box-shadow:0 1px 2px rgba(28,24,21,.2)}
+.brand-text{display:flex;flex-direction:column;line-height:1.2}
+.brand-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.brand-sub{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:500;margin-top:2px}
+
+.user-chip{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--paper);font-weight:600;font-size:13px;text-transform:uppercase;cursor:pointer;transition:opacity var(--t-fast);user-select:none}
+.user-chip:hover{opacity:.8}
+
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 80px;max-width:1200px;width:100%;margin:0 auto}
+
+.welcome{text-align:center;margin-bottom:50px}
+.eyebrow{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.12em;font-weight:600;margin-bottom:12px}
+.welcome h1{font-family:var(--font-display);font-style:normal;font-size:54px;font-weight:400;letter-spacing:-.015em;line-height:1;color:var(--ink);margin-bottom:14px}
+.welcome h1 em{font-style:italic;color:var(--copper)}
+.welcome p{color:var(--ink-2);font-size:15px;line-height:1.55;max-width:540px;margin:0 auto}
+
+.app-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;width:100%;max-width:880px;margin:0 auto}
+
+.app-card{
+  background:var(--paper);border:1px solid var(--rule);border-radius:18px;
+  padding:30px 28px 26px;text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;gap:18px;
+  transition:all var(--t-fast);position:relative;overflow:hidden;
+  cursor:pointer;
+}
+.app-card:hover{transform:translateY(-3px);border-color:var(--rule-2);box-shadow:var(--shadow-lg)}
+.app-card.disabled{opacity:.55;cursor:not-allowed}
+.app-card.disabled:hover{transform:none;box-shadow:none;border-color:var(--rule)}
+
+.app-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.app-icon.copper{background:var(--copper-soft);color:var(--copper)}
+.app-icon.indigo{background:var(--indigo-soft);color:var(--indigo)}
+.app-icon.gray{background:var(--paper-3);color:var(--ink-3)}
+
+.app-title{font-family:var(--font-display);font-style:italic;font-size:30px;font-weight:400;letter-spacing:-.01em;line-height:1.05;color:var(--ink)}
+.app-eng{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-top:4px}
+.app-desc{color:var(--ink-2);font-size:13.5px;line-height:1.55;margin-top:4px}
+
+.app-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.app-tag{font-size:11px;background:var(--paper-3);color:var(--ink-2);padding:3px 9px;border-radius:999px;font-weight:500}
+
+.app-cta{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:16px;border-top:1px solid var(--rule);margin-top:6px;
+  font-size:13px;color:var(--ink-2);font-weight:500;
+}
+.app-cta .arrow{font-size:18px;transition:transform var(--t-fast)}
+.app-card:hover .app-cta .arrow{transform:translateX(4px);color:var(--copper)}
+
+footer{text-align:center;padding:24px;color:var(--ink-3);font-size:11.5px}
+
+#auth-ov{position:fixed;inset:0;background:var(--paper);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.auth-card{max-width:420px;width:100%;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:36px 32px;box-shadow:var(--shadow-lg);text-align:center}
+.auth-mark{width:54px;height:54px;border-radius:12px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:30px;margin:0 auto 18px}
+.auth-card h1{font-family:var(--font-display);font-style:italic;font-size:32px;font-weight:400;margin:0 0 6px;color:var(--ink)}
+.auth-card .auth-sub{font-size:13px;color:var(--ink-3);margin:0 0 24px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.auth-card p.auth-desc{font-size:13.5px;color:var(--ink-2);margin:0 0 22px;line-height:1.55}
+.auth-card input[type=email]{width:100%;padding:12px 14px;border:1px solid var(--rule-2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;transition:border-color var(--t-fast)}
+.auth-card input[type=email]:focus{outline:none;border-color:var(--copper)}
+.auth-card button{width:100%;margin-top:12px;padding:12px 16px;border:none;border-radius:8px;background:var(--ink);color:var(--paper);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity var(--t-fast)}
+.auth-card button:hover{opacity:.85}
+.auth-card button:disabled{opacity:.5;cursor:not-allowed}
+#auth-msg{margin-top:14px;font-size:12.5px;min-height:16px}
+#auth-msg.ok{color:#0a6b2f}
+#auth-msg.err{color:#b3261e}
+
+@media(max-width:640px){
+  header{padding:16px 20px}
+  .welcome h1{font-size:40px}
+  .welcome{margin-bottom:36px}
+  main{padding:20px 16px 60px}
+  .app-grid{grid-template-columns:1fr;gap:16px}
+  .app-card{padding:24px 22px 22px}
+  .app-title{font-size:26px}
+}
 </style>
 </head>
 <body>
-<div id="toaster"></div>
-<div id="mob-ov" class="mob-ov" onclick="closeMobDrawer()"></div>
 
 <!-- AUTH OVERLAY -->
-<div id="auth-ov" style="display:none">
+<div id="auth-ov">
   <div class="auth-card">
     <div class="auth-mark">m</div>
     <h1>เข้าสู่<i>ระบบ</i></h1>
     <div class="auth-sub">My Enterprise</div>
     <p class="auth-desc">เลือกวิธีเข้าระบบ — ข้อมูล sync อัตโนมัติทุกเครื่อง</p>
-    <button type="button" id="auth-google" onclick="signInWithGoogle()" style="background:#fff;color:#1f1f1f;border:1px solid var(--rule-2);display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background var(--t-fast)">
+    <button type="button" id="auth-google" onclick="signInWithGoogle()" style="background:#fff;color:#1f1f1f;border:1px solid var(--rule-2);display:flex;align-items:center;justify-content:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
       เข้าระบบด้วย Google
     </button>
@@ -66,169 +143,114 @@
   </div>
 </div>
 
-<!-- Mobile drawer -->
-<aside id="mob-drawer">
-  <div class="md-head">
-    <div style="width:34px;height:34px;border-radius:8px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:18px">m</div>
-    <div><div style="font-weight:600;font-size:14px" id="md-name">My Enterprise</div><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">ระบบเอกสาร</div></div>
-  </div>
-  <div id="md-nav"></div>
-</aside>
-
-<div id="app">
-  <!-- TOP NAV -->
-  <header id="topnav">
-    <div class="tn-inner">
-      <button class="hamburger" onclick="toggleMobDrawer()" aria-label="menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
-      <div class="tn-brand" onclick="navigate('dashboard')">
-        <div class="tn-mark">m</div>
-        <div>
-          <div class="tn-brand-name" id="tn-brand-name">My Enterprise</div>
-          <div class="tn-brand-sub">ระบบเอกสาร</div>
-        </div>
-      </div>
-      <nav class="tn-nav" id="tn-nav"></nav>
-      <div class="tn-actions">
-        <button class="btn-cmdk" onclick="openCmdK()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <span>ค้นหา · สร้าง</span>
-          <span class="kbd">⌘K</span>
-        </button>
-        <div style="position:relative" id="create-wrap">
-          <button class="btn-create" onclick="toggleCreateMenu()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
-            <span class="bc-label">สร้างเอกสาร</span>
-          </button>
-          <div id="create-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow-lg);min-width:240px;z-index:60;padding:6px;animation:cmdkIn .2s"></div>
-        </div>
+<div id="shell" style="display:none">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">m</div>
+      <div class="brand-text">
+        <div class="brand-name">My Enterprise</div>
+        <div class="brand-sub">Workspace</div>
       </div>
     </div>
+    <div class="user-chip" id="user-chip" onclick="signOut()" title="ออกจากระบบ">A</div>
   </header>
 
-  <!-- MAIN -->
-  <div id="main">
-    <main id="content">
-      <div style="padding:80px;text-align:center;color:var(--ink-3)">
-        <div class="spin" style="width:24px;height:24px;border-width:3px"></div>
-        <div style="margin-top:14px">กำลังเตรียมระบบ...</div>
-      </div>
-    </main>
-  </div>
+  <main>
+    <div class="welcome">
+      <div class="eyebrow" id="greet-eyebrow">Welcome back</div>
+      <h1>เลือก<em>ระบบ</em>ที่ต้องการใช้</h1>
+      <p>ข้อมูลของแต่ละระบบแยกขาดกัน · login ครั้งเดียว ใช้ได้ทุกระบบ · sync ทุกเครื่อง</p>
+    </div>
+
+    <div class="app-grid">
+      <a href="docs/" class="app-card">
+        <div class="app-icon copper">📄</div>
+        <div>
+          <div class="app-title">บริษัท <i>หลัก</i></div>
+          <div class="app-eng">Editorial Workspace</div>
+        </div>
+        <div class="app-desc">ระบบเอกสารเต็มรูปแบบ — ใบเสนอ · ใบกำกับภาษี · ใบเสร็จ · ใบวางบิล + คลังสินค้า + ภาพรวมการเงิน</div>
+        <div class="app-tags">
+          <span class="app-tag">มี VAT</span>
+          <span class="app-tag">5 ประเภทเอกสาร</span>
+          <span class="app-tag">บัญชีเต็ม</span>
+        </div>
+        <div class="app-cta">
+          <span>เข้าใช้งาน</span>
+          <span class="arrow">→</span>
+        </div>
+      </a>
+
+      <a href="multi/" class="app-card">
+        <div class="app-icon indigo">📋</div>
+        <div>
+          <div class="app-title">บิลรวม<i>ไม่ VAT</i></div>
+          <div class="app-eng">Multi Documents</div>
+        </div>
+        <div class="app-desc">ระบบเอกสารแบบยืดหยุ่น — เปิด/ปิด VAT ได้ต่อใบ · รองรับหลายบริษัทผู้ออก · เอกสารครบ 5 ประเภท</div>
+        <div class="app-tags">
+          <span class="app-tag">VAT ตามใจ</span>
+          <span class="app-tag">หลายบริษัท</span>
+          <span class="app-tag">บิลรวม</span>
+        </div>
+        <div class="app-cta">
+          <span>เข้าใช้งาน</span>
+          <span class="arrow">→</span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    My Enterprise Workspace · ข้อมูลทั้งหมดเก็บบน Supabase Cloud
+  </footer>
 </div>
 
-<!-- Supabase config -->
-<script>
-  window.SUPABASE_URL='https://wfgbobtcwxaahjprvkyo.supabase.co';
-  window.SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmZ2JvYnRjd3hhYWhqcHJ2a3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTM4NTMsImV4cCI6MjA5NDE4OTg1M30.szocRVqojaNPt0IvukjeEbJucfY7WLpdbpkUIQQD6DA';
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-<script src="icons.js"></script>
-<script src="core.js"></script>
-<script src="forms.js"></script>
-<script src="print.js"></script>
-<script src="app.js"></script>
-<script src="cmdk.js"></script>
 <script>
-// ============================================================
-// REPAIR + INIT
-// ============================================================
-async function repairCounters(){
-  const thYear=new Date().getFullYear()+543;
-  for(const type of ['quotation','invoice','receipt','billing']){
-    const realMax=await getMaxDocCount(type,thYear);
-    const ctr=await dbGet('doc_counters',type);
-    if(!ctr||ctr.year!==thYear||ctr.count!==realMax){
-      await dbPut('doc_counters',{type,count:realMax,year:thYear});
-    }
-  }
-}
+window.SUPABASE_URL='https://wfgbobtcwxaahjprvkyo.supabase.co';
+window.SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmZ2JvYnRjd3hhYWhqcHJ2a3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTM4NTMsImV4cCI6MjA5NDE4OTg1M30.szocRVqojaNPt0IvukjeEbJucfY7WLpdbpkUIQQD6DA';
 
-async function seedIfEmpty(){
-  const[c,i]=await Promise.all([dbAll('customers'),dbAll('inventory')]);
-  if(c.length===0){
-    await dbAdd('customers',{name:'บริษัท ตัวอย่าง จำกัด',taxId:'0105561234567',address:'123 ถ.พระราม 4 แขวงทุ่งมหาเมฆ เขตสาทร กรุงเทพ 10120',phone:'02-000-0000',email:'sample@example.com',note:'',createdAt:new Date().toISOString()});
-    await dbAdd('customers',{name:'ห้างหุ้นส่วน พันธมิตร จำกัด',taxId:'0103564002345',address:'456 ถ.สุขุมวิท 21 แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพ 10110',phone:'02-111-2222',email:'partner@example.com',note:'',createdAt:new Date().toISOString()});
-  }
-  if(i.length===0){
-    await dbAdd('inventory',{name:'บริการที่ปรึกษา (รายชั่วโมง)',sku:'CON-HR',category:'บริการ',unit:'ชม.',stock:999,price:1500,cost:0,description:'',createdAt:new Date().toISOString()});
-    await dbAdd('inventory',{name:'ค่าออกแบบกราฟิก',sku:'DSG-01',category:'บริการ',unit:'งาน',stock:999,price:8500,cost:0,description:'',createdAt:new Date().toISOString()});
-    await dbAdd('inventory',{name:'กล่องบรรจุภัณฑ์ ขนาด M',sku:'PKG-M',category:'สินค้า',unit:'ใบ',stock:120,price:35,cost:18,description:'',createdAt:new Date().toISOString()});
-  }
-}
+let _sb=null;
 
-function applyBrandMark(set){
-  const initial=(set.name||'M').trim().charAt(0).toLowerCase();
-  document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>{
-    if(set.logo){
-      el.innerHTML='<img src="'+esc(set.logo)+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
-      el.classList.add('has-logo');
-    }else{
-      el.textContent=initial;
-      el.classList.remove('has-logo');
-    }
-  });
-}
-window.applyBrandMark=applyBrandMark;
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-async function loadAppForUser(){
-  // defensive: ensure body scroll is never locked at app boot
-  document.body.style.overflow='';
-  await initDB();
-  const ex=await dbGet('settings','company');
-  if(!ex)await dbPut('settings',DEF_SET);
-  await seedIfEmpty();
-  await repairCounters();
-  invalidateSettings();
-  const set=await getSettings();
-  applyBrandMark(set);
-  document.getElementById('tn-brand-name').textContent=set.name;
-  document.getElementById('md-name').textContent=set.name;
-  setupCreateMenu();
-  renderUserChip();
-  await refreshNavCounts();
-  await navigate('dashboard');
+function greetingByHour(){
+  const h=new Date().getHours();
+  if(h<6)return'Good night';
+  if(h<12)return'Good morning';
+  if(h<17)return'Good afternoon';
+  if(h<20)return'Good evening';
+  return'Good night';
 }
 
 async function init(){
-  try{
-    if(!window.supabase){throw new Error('Supabase SDK โหลดไม่สำเร็จ — เช็คอินเทอร์เน็ต');}
-    const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
-    });
-    window._sb=sb;
-    // listen for sign-in/out
-    sb.auth.onAuthStateChange((evt,session)=>{
-      if(evt==='SIGNED_OUT'){location.reload();}
-      if(evt==='SIGNED_IN'&&document.getElementById('auth-ov').style.display!=='none'){
-        document.getElementById('auth-ov').style.display='none';
-        loadAppForUser().catch(showInitError);
-      }
-    });
-    const {data:{session}}=await sb.auth.getSession();
-    if(!session){
-      // show login
-      document.getElementById('auth-ov').style.display='flex';
-      document.getElementById('content').innerHTML='';
-      return;
-    }
-    await loadAppForUser();
-  }catch(e){
-    showInitError(e);
+  if(!window.supabase){alert('Supabase SDK โหลดไม่สำเร็จ');return;}
+  _sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+  });
+  window._sb=_sb;
+  _sb.auth.onAuthStateChange((evt)=>{
+    if(evt==='SIGNED_OUT')location.reload();
+    if(evt==='SIGNED_IN')location.reload();
+  });
+  const {data:{session}}=await _sb.auth.getSession();
+  if(!session){
+    document.getElementById('auth-ov').style.display='flex';
+    return;
+  }
+  // logged in — show shell
+  document.getElementById('shell').style.display='flex';
+  const eg=document.getElementById('greet-eyebrow');if(eg)eg.textContent=greetingByHour();
+  const {data:u}=await _sb.auth.getUser();
+  if(u&&u.user){
+    const ini=(u.user.email||'?')[0].toUpperCase();
+    const chip=document.getElementById('user-chip');
+    chip.textContent=ini;
+    chip.title='เข้าระบบเป็น '+u.user.email+' — คลิกเพื่อออกจากระบบ';
   }
 }
 
-function showInitError(e){
-  document.getElementById('content').innerHTML='<div class="empty"><div class="empty-i">⚠</div><div class="empty-t">เกิดข้อผิดพลาด</div><div class="empty-s">'+esc(e.message)+'</div></div>';
-  console.error(e);
-}
-
-// ============================================================
-// AUTH — magic link login + sign-out chip in topnav
-// ============================================================
 async function submitAuth(ev){
   ev.preventDefault();
   const email=document.getElementById('auth-email').value.trim();
@@ -237,21 +259,15 @@ async function submitAuth(ev){
   msg.className='';msg.textContent='';
   btn.disabled=true;btn.textContent='กำลังส่ง...';
   try{
-    const {error}=await window._sb.auth.signInWithOtp({
-      email,
-      options:{emailRedirectTo:window.location.origin+window.location.pathname}
-    });
+    const {error}=await _sb.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin+window.location.pathname}});
     if(error)throw error;
     msg.className='ok';
-    msg.innerHTML='✅ ส่งลิงก์ไปที่ <b>'+esc(email)+'</b> แล้ว<br>เปิดอีเมลแล้วกดลิงก์เข้าระบบ';
+    msg.innerHTML='✅ ส่งลิงก์ไปที่ <b>'+esc(email)+'</b> แล้ว<br>เปิดอีเมลแล้วกดลิงก์';
     btn.textContent='ส่งซ้ำ';
   }catch(e){
-    msg.className='err';
-    msg.textContent='❌ '+(e.message||'ส่งไม่สำเร็จ');
-    btn.textContent='ส่งลิงก์เข้าสู่ระบบ';
-  }finally{
-    btn.disabled=false;
-  }
+    msg.className='err';msg.textContent='❌ '+(e.message||'ส่งไม่สำเร็จ');
+    btn.textContent='ส่งลิงก์ทางอีเมล';
+  }finally{btn.disabled=false;}
   return false;
 }
 
@@ -261,75 +277,18 @@ async function signInWithGoogle(){
   msg.className='';msg.textContent='';
   btn.disabled=true;
   try{
-    const {error}=await window._sb.auth.signInWithOAuth({
-      provider:'google',
-      options:{redirectTo:window.location.origin+window.location.pathname}
-    });
+    const {error}=await _sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});
     if(error)throw error;
-    // browser will redirect to Google
   }catch(e){
-    msg.className='err';
-    msg.textContent='❌ '+(e.message||'เข้าระบบไม่สำเร็จ');
+    msg.className='err';msg.textContent='❌ '+(e.message||'เข้าระบบไม่สำเร็จ');
     btn.disabled=false;
   }
 }
 
 async function signOut(){
   if(!confirm('ออกจากระบบ?'))return;
-  await window._sb.auth.signOut();
-  // onAuthStateChange handles reload
+  await _sb.auth.signOut();
 }
-
-function renderUserChip(){
-  const actions=document.querySelector('.tn-actions');
-  if(!actions||document.getElementById('tn-user'))return;
-  window._sb.auth.getUser().then(({data})=>{
-    const u=data&&data.user;if(!u)return;
-    const email=u.email||'';
-    const init=(email[0]||'?').toUpperCase();
-    const chip=document.createElement('div');
-    chip.id='tn-user';
-    chip.className='tn-user';
-    chip.title='คลิกเพื่อออกจากระบบ';
-    chip.onclick=signOut;
-    chip.title='เข้าระบบเป็น '+email+' — คลิกเพื่อออกจากระบบ';
-    chip.textContent=init;
-    actions.appendChild(chip);
-  });
-}
-
-// CREATE MENU dropdown
-function setupCreateMenu(){
-  const menu=document.getElementById('create-menu');
-  const items=[
-    {label:'ใบเสนอราคา',sub:'Quotation',icon:'quote',color:'var(--quo)',bg:'var(--quo-soft)',fn:openQuotationForm},
-    {label:'ใบกำกับภาษี / ใบส่งของ',sub:'Tax Invoice',icon:'invoice',color:'var(--inv)',bg:'var(--inv-soft)',fn:openInvoiceForm},
-    {label:'ใบเสร็จรับเงิน',sub:'Receipt',icon:'receipt',color:'var(--rec)',bg:'var(--rec-soft)',fn:openReceiptForm},
-    {label:'ใบวางบิล',sub:'Billing Note',icon:'billing',color:'var(--bil)',bg:'var(--bil-soft)',fn:openBillingForm},
-    {label:'ใบวางบิลรวม',sub:'Combined',icon:'billings',color:'var(--blc)',bg:'var(--blc-soft)',fn:openBillingCombinedForm},
-  ];
-  menu.innerHTML='';
-  items.forEach(it=>{
-    const d=document.createElement('div');
-    d.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;cursor:pointer;transition:background var(--t-fast)';
-    d.onmouseover=()=>d.style.background='var(--paper-3)';
-    d.onmouseout=()=>d.style.background='';
-    d.innerHTML='<div style="width:30px;height:30px;border-radius:7px;background:'+it.bg+';color:'+it.color+';display:flex;align-items:center;justify-content:center">'+I[it.icon]+'</div>'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;line-height:1.3">'+it.label+'</div><div style="font-size:10.5px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;font-weight:500">'+it.sub+'</div></div>';
-    d.addEventListener('mousedown',e=>{e.preventDefault();closeCreateMenu();setTimeout(it.fn,40);});
-    menu.appendChild(d);
-  });
-}
-function toggleCreateMenu(){
-  const m=document.getElementById('create-menu');
-  if(m.style.display==='none'){m.style.display='block';setTimeout(()=>document.addEventListener('click',_outsideCreate),10);}
-  else closeCreateMenu();
-}
-function closeCreateMenu(){const m=document.getElementById('create-menu');if(m){m.style.display='none';document.removeEventListener('click',_outsideCreate);}}
-function _outsideCreate(e){if(!e.target.closest('#create-wrap'))closeCreateMenu();}
-
-function toggleMobDrawer(){document.getElementById('mob-drawer').classList.toggle('open');document.getElementById('mob-ov').classList.toggle('open');}
-function closeMobDrawer(){document.getElementById('mob-drawer').classList.remove('open');document.getElementById('mob-ov').classList.remove('open');}
 
 init();
 </script>

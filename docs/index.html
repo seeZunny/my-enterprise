@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>บริษัท หลัก · My Enterprise</title>
+
+<!-- App namespace (required before core.js loads) -->
+<script>window.APP_NAMESPACE='docs';</script>
+
+<!-- PWA -->
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" type="image/svg+xml" href="../icon.svg">
+<link rel="apple-touch-icon" href="../icon.svg">
+<meta name="theme-color" content="#fefcf7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="My Enterprise">
+<meta name="application-name" content="My Enterprise">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Auth overlay */
+  #auth-ov{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+  .auth-card{max-width:420px;width:100%;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:36px 32px;box-shadow:var(--shadow-lg);text-align:center}
+  .auth-mark{width:54px;height:54px;border-radius:12px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:30px;margin:0 auto 18px}
+  .auth-card h1{font-family:var(--font-display);font-style:italic;font-size:32px;font-weight:400;margin:0 0 6px;color:var(--ink)}
+  .auth-card .auth-sub{font-size:13px;color:var(--ink-3);margin:0 0 24px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+  .auth-card p.auth-desc{font-size:13.5px;color:var(--ink-2);margin:0 0 22px;line-height:1.55}
+  .auth-card input[type=email]{width:100%;padding:12px 14px;border:1px solid var(--rule-2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--paper);color:var(--ink);box-sizing:border-box;transition:border-color var(--t-fast)}
+  .auth-card input[type=email]:focus{outline:none;border-color:var(--copper)}
+  .auth-card button{width:100%;margin-top:12px;padding:12px 16px;border:none;border-radius:8px;background:var(--ink);color:var(--paper);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity var(--t-fast)}
+  .auth-card button:hover{opacity:.85}
+  .auth-card button:disabled{opacity:.5;cursor:not-allowed}
+  #auth-msg{margin-top:14px;font-size:12.5px;min-height:16px}
+  #auth-msg.ok{color:#0a6b2f}
+  #auth-msg.err{color:#b3261e}
+  /* Sign-out chip in topnav — avatar only, hover shows full email tooltip */
+  .tn-user{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);font-weight:600;font-size:12px;text-transform:uppercase;cursor:pointer;transition:opacity var(--t-fast);user-select:none;flex-shrink:0;border:none}
+  .tn-user:hover{opacity:.8}
+  .tn-user-email{display:none}
+</style>
+</head>
+<body>
+<div id="toaster"></div>
+<div id="mob-ov" class="mob-ov" onclick="closeMobDrawer()"></div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-ov" style="display:none">
+  <div class="auth-card">
+    <div class="auth-mark">m</div>
+    <h1>เข้าสู่<i>ระบบ</i></h1>
+    <div class="auth-sub">My Enterprise</div>
+    <p class="auth-desc">เลือกวิธีเข้าระบบ — ข้อมูล sync อัตโนมัติทุกเครื่อง</p>
+    <button type="button" id="auth-google" onclick="signInWithGoogle()" style="background:#fff;color:#1f1f1f;border:1px solid var(--rule-2);display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background var(--t-fast)">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.997 8.997 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+      เข้าระบบด้วย Google
+    </button>
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--ink-3);font-size:11px;text-transform:uppercase;letter-spacing:.08em"><div style="flex:1;height:1px;background:var(--rule)"></div>หรือ<div style="flex:1;height:1px;background:var(--rule)"></div></div>
+    <form id="auth-form" onsubmit="return submitAuth(event)">
+      <input id="auth-email" type="email" required placeholder="you@example.com" autocomplete="email" />
+      <button type="submit" id="auth-btn">ส่งลิงก์ทางอีเมล</button>
+    </form>
+    <div id="auth-msg"></div>
+  </div>
+</div>
+
+<!-- Mobile drawer -->
+<aside id="mob-drawer">
+  <div class="md-head">
+    <div style="width:34px;height:34px;border-radius:8px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:18px">m</div>
+    <div><div style="font-weight:600;font-size:14px" id="md-name">My Enterprise</div><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">ระบบเอกสาร</div></div>
+  </div>
+  <div id="md-nav"></div>
+</aside>
+
+<div id="app">
+  <!-- TOP NAV -->
+  <header id="topnav">
+    <div class="tn-inner">
+      <button class="hamburger" onclick="toggleMobDrawer()" aria-label="menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="tn-brand" onclick="navigate('dashboard')">
+        <div class="tn-mark">m</div>
+        <div>
+          <div class="tn-brand-name" id="tn-brand-name">My Enterprise</div>
+          <div class="tn-brand-sub">ระบบเอกสาร</div>
+        </div>
+      </div>
+      <nav class="tn-nav" id="tn-nav"></nav>
+      <div class="tn-actions">
+        <a href="../" class="tn-app-switch" title="กลับไปเลือกระบบ" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;color:var(--ink-2);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--rule);background:var(--paper);transition:background var(--t-fast)" onmouseover="this.style.background='var(--paper-3)'" onmouseout="this.style.background='var(--paper)'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="tn-app-label">บริษัท หลัก</span>
+        </a>
+        <button class="btn-cmdk" onclick="openCmdK()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <span>ค้นหา · สร้าง</span>
+          <span class="kbd">⌘K</span>
+        </button>
+        <div style="position:relative" id="create-wrap">
+          <button class="btn-create" onclick="toggleCreateMenu()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+            <span class="bc-label">สร้างเอกสาร</span>
+          </button>
+          <div id="create-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow-lg);min-width:240px;z-index:60;padding:6px;animation:cmdkIn .2s"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div id="main">
+    <main id="content">
+      <div style="padding:80px;text-align:center;color:var(--ink-3)">
+        <div class="spin" style="width:24px;height:24px;border-width:3px"></div>
+        <div style="margin-top:14px">กำลังเตรียมระบบ...</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Supabase config -->
+<script>
+  window.SUPABASE_URL='https://wfgbobtcwxaahjprvkyo.supabase.co';
+  window.SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmZ2JvYnRjd3hhYWhqcHJ2a3lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTM4NTMsImV4cCI6MjA5NDE4OTg1M30.szocRVqojaNPt0IvukjeEbJucfY7WLpdbpkUIQQD6DA';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script src="icons.js"></script>
+<script src="core.js"></script>
+<script src="forms.js"></script>
+<script src="print.js"></script>
+<script src="app.js"></script>
+<script src="cmdk.js"></script>
+<script>
+// ============================================================
+// REPAIR + INIT
+// ============================================================
+async function repairCounters(){
+  const thYear=new Date().getFullYear()+543;
+  for(const type of ['quotation','invoice','receipt','billing']){
+    const realMax=await getMaxDocCount(type,thYear);
+    const ctr=await dbGet('doc_counters',type);
+    if(!ctr||ctr.year!==thYear||ctr.count!==realMax){
+      await dbPut('doc_counters',{type,count:realMax,year:thYear});
+    }
+  }
+}
+
+async function seedIfEmpty(){
+  const[c,i]=await Promise.all([dbAll('customers'),dbAll('inventory')]);
+  if(c.length===0){
+    await dbAdd('customers',{name:'บริษัท ตัวอย่าง จำกัด',taxId:'0105561234567',address:'123 ถ.พระราม 4 แขวงทุ่งมหาเมฆ เขตสาทร กรุงเทพ 10120',phone:'02-000-0000',email:'sample@example.com',note:'',createdAt:new Date().toISOString()});
+    await dbAdd('customers',{name:'ห้างหุ้นส่วน พันธมิตร จำกัด',taxId:'0103564002345',address:'456 ถ.สุขุมวิท 21 แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพ 10110',phone:'02-111-2222',email:'partner@example.com',note:'',createdAt:new Date().toISOString()});
+  }
+  if(i.length===0){
+    await dbAdd('inventory',{name:'บริการที่ปรึกษา (รายชั่วโมง)',sku:'CON-HR',category:'บริการ',unit:'ชม.',stock:999,price:1500,cost:0,description:'',createdAt:new Date().toISOString()});
+    await dbAdd('inventory',{name:'ค่าออกแบบกราฟิก',sku:'DSG-01',category:'บริการ',unit:'งาน',stock:999,price:8500,cost:0,description:'',createdAt:new Date().toISOString()});
+    await dbAdd('inventory',{name:'กล่องบรรจุภัณฑ์ ขนาด M',sku:'PKG-M',category:'สินค้า',unit:'ใบ',stock:120,price:35,cost:18,description:'',createdAt:new Date().toISOString()});
+  }
+}
+
+function applyBrandMark(set){
+  const initial=(set.name||'M').trim().charAt(0).toLowerCase();
+  document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>{
+    if(set.logo){
+      el.innerHTML='<img src="'+esc(set.logo)+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+      el.classList.add('has-logo');
+    }else{
+      el.textContent=initial;
+      el.classList.remove('has-logo');
+    }
+  });
+}
+window.applyBrandMark=applyBrandMark;
+
+async function loadAppForUser(){
+  // defensive: ensure body scroll is never locked at app boot
+  document.body.style.overflow='';
+  await initDB();
+  const ex=await dbGet('settings','company');
+  if(!ex)await dbPut('settings',DEF_SET);
+  await seedIfEmpty();
+  await repairCounters();
+  invalidateSettings();
+  const set=await getSettings();
+  applyBrandMark(set);
+  document.getElementById('tn-brand-name').textContent=set.name;
+  document.getElementById('md-name').textContent=set.name;
+  setupCreateMenu();
+  renderUserChip();
+  await refreshNavCounts();
+  await navigate('dashboard');
+}
+
+async function init(){
+  try{
+    if(!window.supabase){throw new Error('Supabase SDK โหลดไม่สำเร็จ — เช็คอินเทอร์เน็ต');}
+    const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},
+    });
+    window._sb=sb;
+    // listen for sign-in/out
+    sb.auth.onAuthStateChange((evt,session)=>{
+      if(evt==='SIGNED_OUT'){location.reload();}
+      if(evt==='SIGNED_IN'&&document.getElementById('auth-ov').style.display!=='none'){
+        document.getElementById('auth-ov').style.display='none';
+        loadAppForUser().catch(showInitError);
+      }
+    });
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){
+      // show login
+      document.getElementById('auth-ov').style.display='flex';
+      document.getElementById('content').innerHTML='';
+      return;
+    }
+    await loadAppForUser();
+  }catch(e){
+    showInitError(e);
+  }
+}
+
+function showInitError(e){
+  document.getElementById('content').innerHTML='<div class="empty"><div class="empty-i">⚠</div><div class="empty-t">เกิดข้อผิดพลาด</div><div class="empty-s">'+esc(e.message)+'</div></div>';
+  console.error(e);
+}
+
+// ============================================================
+// AUTH — magic link login + sign-out chip in topnav
+// ============================================================
+async function submitAuth(ev){
+  ev.preventDefault();
+  const email=document.getElementById('auth-email').value.trim();
+  const btn=document.getElementById('auth-btn');
+  const msg=document.getElementById('auth-msg');
+  msg.className='';msg.textContent='';
+  btn.disabled=true;btn.textContent='กำลังส่ง...';
+  try{
+    const {error}=await window._sb.auth.signInWithOtp({
+      email,
+      options:{emailRedirectTo:window.location.origin+window.location.pathname}
+    });
+    if(error)throw error;
+    msg.className='ok';
+    msg.innerHTML='✅ ส่งลิงก์ไปที่ <b>'+esc(email)+'</b> แล้ว<br>เปิดอีเมลแล้วกดลิงก์เข้าระบบ';
+    btn.textContent='ส่งซ้ำ';
+  }catch(e){
+    msg.className='err';
+    msg.textContent='❌ '+(e.message||'ส่งไม่สำเร็จ');
+    btn.textContent='ส่งลิงก์เข้าสู่ระบบ';
+  }finally{
+    btn.disabled=false;
+  }
+  return false;
+}
+
+async function signInWithGoogle(){
+  const btn=document.getElementById('auth-google');
+  const msg=document.getElementById('auth-msg');
+  msg.className='';msg.textContent='';
+  btn.disabled=true;
+  try{
+    const {error}=await window._sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{redirectTo:window.location.origin+window.location.pathname}
+    });
+    if(error)throw error;
+    // browser will redirect to Google
+  }catch(e){
+    msg.className='err';
+    msg.textContent='❌ '+(e.message||'เข้าระบบไม่สำเร็จ');
+    btn.disabled=false;
+  }
+}
+
+async function signOut(){
+  if(!confirm('ออกจากระบบ?'))return;
+  await window._sb.auth.signOut();
+  // onAuthStateChange handles reload
+}
+
+function renderUserChip(){
+  const actions=document.querySelector('.tn-actions');
+  if(!actions||document.getElementById('tn-user'))return;
+  window._sb.auth.getUser().then(({data})=>{
+    const u=data&&data.user;if(!u)return;
+    const email=u.email||'';
+    const init=(email[0]||'?').toUpperCase();
+    const chip=document.createElement('div');
+    chip.id='tn-user';
+    chip.className='tn-user';
+    chip.title='คลิกเพื่อออกจากระบบ';
+    chip.onclick=signOut;
+    chip.title='เข้าระบบเป็น '+email+' — คลิกเพื่อออกจากระบบ';
+    chip.textContent=init;
+    actions.appendChild(chip);
+  });
+}
+
+// CREATE MENU dropdown
+function setupCreateMenu(){
+  const menu=document.getElementById('create-menu');
+  const items=[
+    {label:'ใบเสนอราคา',sub:'Quotation',icon:'quote',color:'var(--quo)',bg:'var(--quo-soft)',fn:openQuotationForm},
+    {label:'ใบกำกับภาษี / ใบส่งของ',sub:'Tax Invoice',icon:'invoice',color:'var(--inv)',bg:'var(--inv-soft)',fn:openInvoiceForm},
+    {label:'ใบเสร็จรับเงิน',sub:'Receipt',icon:'receipt',color:'var(--rec)',bg:'var(--rec-soft)',fn:openReceiptForm},
+    {label:'ใบวางบิล',sub:'Billing Note',icon:'billing',color:'var(--bil)',bg:'var(--bil-soft)',fn:openBillingForm},
+    {label:'ใบวางบิลรวม',sub:'Combined',icon:'billings',color:'var(--blc)',bg:'var(--blc-soft)',fn:openBillingCombinedForm},
+  ];
+  menu.innerHTML='';
+  items.forEach(it=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;cursor:pointer;transition:background var(--t-fast)';
+    d.onmouseover=()=>d.style.background='var(--paper-3)';
+    d.onmouseout=()=>d.style.background='';
+    d.innerHTML='<div style="width:30px;height:30px;border-radius:7px;background:'+it.bg+';color:'+it.color+';display:flex;align-items:center;justify-content:center">'+I[it.icon]+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;line-height:1.3">'+it.label+'</div><div style="font-size:10.5px;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;font-weight:500">'+it.sub+'</div></div>';
+    d.addEventListener('mousedown',e=>{e.preventDefault();closeCreateMenu();setTimeout(it.fn,40);});
+    menu.appendChild(d);
+  });
+}
+function toggleCreateMenu(){
+  const m=document.getElementById('create-menu');
+  if(m.style.display==='none'){m.style.display='block';setTimeout(()=>document.addEventListener('click',_outsideCreate),10);}
+  else closeCreateMenu();
+}
+function closeCreateMenu(){const m=document.getElementById('create-menu');if(m){m.style.display='none';document.removeEventListener('click',_outsideCreate);}}
+function _outsideCreate(e){if(!e.target.closest('#create-wrap'))closeCreateMenu();}
+
+function toggleMobDrawer(){document.getElementById('mob-drawer').classList.toggle('open');document.getElementById('mob-ov').classList.toggle('open');}
+function closeMobDrawer(){document.getElementById('mob-drawer').classList.remove('open');document.getElementById('mob-ov').classList.remove('open');}
+
+init();
+</script>
+</body>
+</html>
