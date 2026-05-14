@@ -160,6 +160,20 @@ async function seedIfEmpty(){
   }
 }
 
+function applyBrandMark(set){
+  const initial=(set.name||'M').trim().charAt(0).toLowerCase();
+  document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>{
+    if(set.logo){
+      el.innerHTML='<img src="'+esc(set.logo)+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+      el.classList.add('has-logo');
+    }else{
+      el.textContent=initial;
+      el.classList.remove('has-logo');
+    }
+  });
+}
+window.applyBrandMark=applyBrandMark;
+
 async function loadAppForUser(){
   // defensive: ensure body scroll is never locked at app boot
   document.body.style.overflow='';
@@ -170,8 +184,7 @@ async function loadAppForUser(){
   await repairCounters();
   invalidateSettings();
   const set=await getSettings();
-  const initial=(set.name||'M').trim().charAt(0).toLowerCase();
-  document.querySelectorAll('.tn-mark, .md-head > div:first-child').forEach(el=>el.textContent=initial);
+  applyBrandMark(set);
   document.getElementById('tn-brand-name').textContent=set.name;
   document.getElementById('md-name').textContent=set.name;
   setupCreateMenu();

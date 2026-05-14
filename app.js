@@ -760,8 +760,10 @@ async function saveSettings(){
   if(!data.name){toast('กรุณาระบุชื่อบริษัท','err');return;}
   await dbPut('settings',data);
   invalidateSettings();
-  // update sidebar brand name
-  document.getElementById('sb-name').textContent=data.name;
+  // refresh topnav brand mark + name (logo, initial)
+  if(window.applyBrandMark)applyBrandMark(data);
+  const tn=document.getElementById('tn-brand-name');if(tn)tn.textContent=data.name;
+  const mn=document.getElementById('md-name');if(mn)mn.textContent=data.name;
   toast('บันทึกเรียบร้อย');
 }
 async function resetSettings(){
