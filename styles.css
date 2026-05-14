@@ -372,6 +372,9 @@ tbody tr:last-child td{border-bottom:none}
    STATS — big serif numbers
    ============================================================ */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin-bottom:36px;border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);overflow:hidden}
+.dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.dash-grid-eq{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.dash-grid,.dash-grid-eq{grid-template-columns:1fr}}
 .stat{
   padding:22px 24px;position:relative;border-right:1px solid var(--rule);
 }

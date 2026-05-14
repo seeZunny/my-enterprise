@@ -162,7 +162,7 @@ async function pgDashboard(){
   },80);
 
   // RECENT + PENDING grid
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1.4fr 1fr;gap:20px';
+  const grid=document.createElement('div');grid.className='dash-grid';
 
   const recCard=document.createElement('div');recCard.className='card';
   recCard.innerHTML='<div class="card-header"><div><div class="card-title">เอกสาร<em style="font-family:var(--font-display);font-style:italic;font-weight:400"> ล่าสุด</em></div><div class="card-sub">8 รายการล่าสุด · คลิกเพื่อดูพรีวิว</div></div><button class="btn btn-ghost btn-sm" onclick="navigate(\'docs\')">ทั้งหมด '+I.arrowRight+'</button></div>';
@@ -682,7 +682,7 @@ async function pgSettings(){
   const s=await getSettings();
   const c=document.getElementById('content');c.innerHTML='';
   c.insertAdjacentHTML('beforeend','<div class="ph"><div><div class="pt">ตั้งค่าบริษัท</div><div class="ps">ข้อมูลจะแสดงบนเอกสารทุกประเภท</div></div></div>');
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:20px';
+  const grid=document.createElement('div');grid.className='dash-grid-eq';
 
   const c1=document.createElement('div');c1.className='card';
   c1.innerHTML='<div class="card-header"><div class="card-title">ข้อมูลบริษัท</div></div><div class="card-body">'
@@ -802,7 +802,7 @@ async function pgBackup(){
     +'</div>';
   c.appendChild(xc);
 
-  const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:20px';
+  const grid=document.createElement('div');grid.className='dash-grid-eq';
 
   const c1=document.createElement('div');c1.className='card';
   c1.innerHTML='<div class="card-header"><div class="card-title">'+I.download+' Backup ข้อมูล</div></div><div class="card-body">'
