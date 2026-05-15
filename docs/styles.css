@@ -25,12 +25,12 @@
 
   --headline:#1d1d1f;
 
-  /* doc-type colors — grayscale steps (minimal, still tellable apart) */
-  --quo:#86868b;   --quo-soft:#f0f0f3;   --quo-bg:#f5f5f7;
-  --inv:#1d1d1f;   --inv-soft:#e8e8ed;   --inv-bg:#f5f5f7;
-  --rec:#6e6e73;   --rec-soft:#ececef;   --rec-bg:#f5f5f7;
-  --bil:#48484a;   --bil-soft:#e4e4e7;   --bil-bg:#f5f5f7;
-  --blc:#3a3a3c;   --blc-soft:#e0e0e4;   --blc-bg:#f5f5f7;
+  /* doc-type colors — Apple system colors (clean, distinct per type) */
+  --quo:#c2740a;   --quo-soft:#fdecd6;   --quo-bg:#fff6ea;   /* orange */
+  --inv:#0066cc;   --inv-soft:#dbeafe;   --inv-bg:#eef5ff;   /* blue */
+  --rec:#1d8a4e;   --rec-soft:#d6efe0;   --rec-bg:#e9f7ef;   /* green */
+  --bil:#5856d6;   --bil-soft:#e3e3f8;   --bil-bg:#eeeefb;   /* indigo */
+  --blc:#a23bb8;   --blc-soft:#f3ddf7;   --blc-bg:#f9ecfb;   /* purple */
 
   /* semantic — functional (financial app), Apple-tuned */
   --success:#1d8a4e; --warning:#b25000; --danger:#d70015; --info:#1d1d1f;
