@@ -756,3 +756,58 @@ svg{flex-shrink:0}
 .cust-bar-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;
   width:34px;height:34px;border-radius:8px;background:var(--copper-tint);color:var(--copper)}
 .cust-bar-icon svg{width:16px;height:16px}
+
+/* ============================================================
+   GLASS DESIGN LAYER (subtle) — appended override, safe to remove
+   ============================================================ */
+/* soft ambient background so glass has something to blur */
+body{
+  background:
+    radial-gradient(900px 600px at 12% 0%, rgba(120,140,200,.10), transparent 60%),
+    radial-gradient(800px 600px at 90% 10%, rgba(190,160,210,.09), transparent 55%),
+    radial-gradient(700px 700px at 50% 100%, rgba(140,190,200,.08), transparent 60%),
+    #f4f5f9;
+  background-attachment:fixed;
+}
+
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .card,.card-flat{
+    background:rgba(255,255,255,.62);
+    border-color:rgba(255,255,255,.65);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    box-shadow:0 1px 1px rgba(0,0,0,.03), 0 10px 30px -12px rgba(20,24,40,.16);
+  }
+  .stats{
+    background:rgba(255,255,255,.55);
+    border-color:rgba(255,255,255,.6);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+  }
+  .modal{
+    background:rgba(255,255,255,.78);
+    border-left:1px solid rgba(255,255,255,.6);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+    backdrop-filter:blur(30px) saturate(180%);
+  }
+  .mh,.mf{background:rgba(255,255,255,.35)}
+  .overlay{background:rgba(20,24,40,.28)}
+  .cmdk-ov{background:rgba(20,24,40,.30)}
+  .cmdk{
+    background:rgba(255,255,255,.80);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+    backdrop-filter:blur(30px) saturate(180%);
+  }
+  #topnav{
+    background:rgba(255,255,255,.60);
+    -webkit-backdrop-filter:blur(22px) saturate(180%);
+    backdrop-filter:blur(22px) saturate(180%);
+  }
+  #mob-drawer{
+    background:rgba(255,255,255,.85);
+    -webkit-backdrop-filter:blur(28px) saturate(180%);
+    backdrop-filter:blur(28px) saturate(180%);
+  }
+  /* keep text crisp on glass */
+  .card,.stat,.modal,.cmdk{color:var(--ink)}
+}

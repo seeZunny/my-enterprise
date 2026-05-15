@@ -33,7 +33,32 @@
   --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue','IBM Plex Sans Thai',system-ui,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{min-height:100%;background:#fbfbfd;font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.01em}
+html{min-height:100%}
+body{
+  min-height:100vh;font-family:var(--font);color:var(--ink);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.01em;
+  background:
+    radial-gradient(900px 600px at 12% 0%, rgba(120,140,200,.12), transparent 60%),
+    radial-gradient(800px 600px at 90% 8%, rgba(190,160,210,.10), transparent 55%),
+    radial-gradient(700px 700px at 50% 100%, rgba(140,190,200,.09), transparent 60%),
+    #f4f5f9;
+  background-attachment:fixed;
+}
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .app-card{
+    background:rgba(255,255,255,.60);
+    border-color:rgba(255,255,255,.65);
+    -webkit-backdrop-filter:blur(22px) saturate(180%);
+    backdrop-filter:blur(22px) saturate(180%);
+  }
+  .auth-card{
+    background:rgba(255,255,255,.78);
+    border-color:rgba(255,255,255,.6);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+    backdrop-filter:blur(30px) saturate(180%);
+  }
+  #auth-ov{background:rgba(244,245,249,.7);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+}
 
 #shell{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 
