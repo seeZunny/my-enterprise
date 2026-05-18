@@ -811,3 +811,38 @@ body{
   /* keep text crisp on glass */
   .card,.stat,.modal,.cmdk{color:var(--ink)}
 }
+
+/* ============================================================
+   MOBILE MODAL FIX — solid sheet + prominent save bar
+   (after glass block so it wins the cascade)
+   ============================================================ */
+@media(max-width:720px){
+  .overlay{align-items:stretch;justify-content:stretch}
+  .modal{
+    width:100%;max-width:none;border-left:none;
+    background:#fff!important;
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+    border-radius:0;
+  }
+  .mh{
+    background:#fff!important;position:sticky;top:0;z-index:5;
+    padding-top:14px;padding-bottom:14px;
+  }
+  .mb{padding-bottom:24px}
+  .mf{
+    background:#fff!important;
+    border-top:1px solid var(--rule);
+    box-shadow:0 -6px 20px rgba(0,0,0,.08);
+    position:sticky;bottom:0;z-index:5;
+    padding-top:14px;
+    padding-bottom:max(16px,env(safe-area-inset-bottom));
+    gap:10px;
+  }
+  .mf .btn{
+    flex:1;min-height:48px;font-size:15px;border-radius:14px;
+  }
+  .mf .btn-ghost{flex:0 0 auto;min-width:96px}
+  /* bigger tap targets on form fields */
+  .fc,select.fc,textarea.fc{min-height:46px;font-size:16px}
+  .it input,.it select{font-size:16px}
+}
