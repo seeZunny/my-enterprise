@@ -849,8 +849,8 @@ html.dark{
   --paper-3:#3a3a3c;
   --paper-4:#48484a;
   --ink:#f2f2f7;
-  --ink-2:#aeaeb2;
-  --ink-3:#8e8e93;
+  --ink-2:#d1d1d6;
+  --ink-3:#a1a1a6;
   --ink-4:#636366;
   --rule:#38383a;
   --rule-2:#48484a;
@@ -880,10 +880,10 @@ html.dark *::selection{background:rgba(255,255,255,.18);color:inherit}
 
 @supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
   html.dark .card,html.dark .card-flat{
-    background:rgba(28,28,30,.62);border-color:rgba(255,255,255,.08);
+    background:rgba(28,28,30,.82);border-color:rgba(255,255,255,.08);
     box-shadow:0 1px 1px rgba(0,0,0,.4),0 10px 30px -12px rgba(0,0,0,.55);
   }
-  html.dark .stats{background:rgba(28,28,30,.55);border-color:rgba(255,255,255,.08)}
+  html.dark .stats{background:rgba(28,28,30,.78);border-color:rgba(255,255,255,.08)}
   html.dark .modal{background:rgba(28,28,30,.86);border-left:1px solid rgba(255,255,255,.06)}
   html.dark .mh,html.dark .mf{background:rgba(28,28,30,.5)}
   html.dark .overlay{background:rgba(0,0,0,.55)}

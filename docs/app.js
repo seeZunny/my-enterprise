@@ -536,7 +536,7 @@ async function pgCustomers(){
 
   // info banner
   const info=document.createElement('div');
-  info.style.cssText='background:linear-gradient(135deg,var(--accent-soft),#fff);border:1px solid var(--accent);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px';
+  info.style.cssText='background:linear-gradient(135deg,var(--accent-soft),var(--paper));border:1px solid var(--accent);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px';
   info.innerHTML='<div style="width:36px;height:36px;background:var(--accent);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+I.zap+'</div>'
     +'<div style="flex:1"><div style="font-weight:600;font-size:13.5px;color:var(--text)">ระบบจดจำที่อยู่อัตโนมัติ</div><div style="font-size:12.5px;color:var(--text-2);margin-top:2px">ทุกครั้งที่คุณออกเอกสารให้ลูกค้าใหม่ ระบบจะบันทึกชื่อ, ที่อยู่, เลขผู้เสียภาษีไว้ที่นี่อัตโนมัติ ครั้งต่อไปเลือกจาก dropdown ได้เลย</div></div>';
   c.appendChild(info);
@@ -715,7 +715,7 @@ async function pgInventory(){
   let lowFilter=false;
   if(outItems.length||lowItems.length){
     const banner=document.createElement('div');
-    banner.style.cssText='background:linear-gradient(135deg,#fff5e6,#fff);border:1px solid var(--warning);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
+    banner.style.cssText='background:linear-gradient(135deg,var(--paper-3),var(--paper));border:1px solid var(--warning);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
     banner.innerHTML='<div style="width:36px;height:36px;background:var(--warning);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">⚠</div>'
       +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px;color:var(--text)">มีสินค้าต้องดูแล</div>'
       +'<div style="font-size:12.5px;color:var(--text-2);margin-top:2px">'
