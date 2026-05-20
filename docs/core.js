@@ -262,6 +262,8 @@ function closeModal(){
   const hasCmdk=document.getElementById('cmdk-overlay')||document.getElementById('cmdk-ov');
   if(!hasCmdk)document.body.style.overflow='';
   document.querySelectorAll('.ac-pop').forEach(p=>p.remove());
+  // cleanup ephemeral state — prevents leak when user cancels convertDoc then creates a new doc
+  if(window._app)window._app.linkedInvoiceId=null;
 }
 // Defensive: ensure body scroll is never permanently locked
 function ensureScrollUnlocked(){

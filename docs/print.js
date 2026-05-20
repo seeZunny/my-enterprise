@@ -198,12 +198,13 @@ async function convertDoc(srcStore,srcId,target){
   // pointing back to the source doc for traceability.
   const prefill={...src};
   delete prefill.id;
-  // payment linkage: invoice -> receipt remembers the source invoice ID so the
-  // invoice can be marked 'paid' once the receipt is saved.
-  if(srcStore==='invoices'&&target==='receipt')window._app.linkedInvoiceId=src.id;
   // close any open modal first, then open the new form
   closeModal();
   setTimeout(()=>{
+    // payment linkage: set AFTER closeModal so closeModal's cleanup doesn't wipe it.
+    // invoice -> receipt remembers the source invoice ID so the invoice can be
+    // marked 'paid' once the receipt is saved.
+    if(srcStore==='invoices'&&target==='receipt')window._app.linkedInvoiceId=src.id;
     if(target==='invoice')openInvoiceForm(null,prefill);
     else if(target==='receipt')openReceiptForm(null,prefill);
     else if(target==='billing')openBillingForm(null,null,prefill);

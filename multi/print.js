@@ -196,9 +196,10 @@ async function convertDoc(srcStore,srcId,target){
   if(!src){toast('ไม่พบเอกสารต้นทาง','err');return;}
   const prefill={...src};
   delete prefill.id;
-  if(srcStore==='invoices'&&target==='receipt')window._app.linkedInvoiceId=src.id;
   closeModal();
   setTimeout(()=>{
+    // set AFTER closeModal so closeModal's cleanup doesn't wipe it
+    if(srcStore==='invoices'&&target==='receipt')window._app.linkedInvoiceId=src.id;
     if(target==='invoice')openInvoiceForm(null,prefill);
     else if(target==='receipt')openReceiptForm(null,prefill);
     else if(target==='billing')openBillingForm(null,null,prefill);

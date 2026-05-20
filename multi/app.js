@@ -633,7 +633,7 @@ async function viewCustomerHistory(cu){
   });
 
   const rows=docs.length?docs.map(d=>
-    '<tr style="cursor:pointer" onclick="viewDocModal(\''+d._s+'\','+d.id+');closeModal()">'
+    '<tr style="cursor:pointer" onclick="viewDocModal(\''+d._s+'\','+d.id+')">'
     +'<td style="padding:10px"><span class="badge '+d._cls+'">'+esc(d._lbl)+'</span></td>'
     +'<td style="padding:10px;font-family:var(--font-mono);font-size:12px">'+esc(d.docNumber||'-')+'</td>'
     +'<td style="padding:10px;color:var(--ink-2);font-size:12.5px">'+thDate(d.docDate||d.createdAt)+'</td>'
