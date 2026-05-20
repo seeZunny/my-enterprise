@@ -476,15 +476,92 @@ async function pgCustomers(){
         +'<td style="color:var(--text-2)">'+esc(cu.email||'—')+'</td>'
         +'<td></td>';
       const w=document.createElement('div');w.style.cssText='display:flex;gap:4px;justify-content:center';
-      const mk=(h,fn,cl='btn btn-soft btn-sm')=>{const b=document.createElement('button');b.className=cl;b.innerHTML=h;b.addEventListener('click',fn);return b;};
-      w.appendChild(mk(I.edit,()=>openCustomerForm(cu.id)));
-      w.appendChild(mk(I.trash,()=>deleteDoc('customers',cu.id,pgCustomers),'btn btn-danger-soft btn-sm'));
+      const mk=(h,fn,cl='btn btn-soft btn-sm',title='')=>{const b=document.createElement('button');b.className=cl;b.innerHTML=h;b.title=title;b.addEventListener('click',fn);return b;};
+      w.appendChild(mk(I.clock,()=>viewCustomerHistory(cu),'btn btn-soft btn-sm','ดูประวัติเอกสาร'));
+      w.appendChild(mk(I.edit,()=>openCustomerForm(cu.id),'btn btn-soft btn-sm','แก้ไข'));
+      w.appendChild(mk(I.trash,()=>deleteDoc('customers',cu.id,pgCustomers),'btn btn-danger-soft btn-sm','ลบ'));
       tr.querySelector('td:last-child').appendChild(w);
+      // make customer name area clickable for quick history
+      const nameCell=tr.querySelector('td:first-child');
+      if(nameCell){nameCell.style.cursor='pointer';nameCell.addEventListener('click',()=>viewCustomerHistory(cu));}
       tbody.appendChild(tr);
     });
   }
   sinp.addEventListener('input',render);render();
 }
+
+// ============================================================
+// CUSTOMER HISTORY — all docs from one customer
+// ============================================================
+async function viewCustomerHistory(cu){
+  const cuId=String(cu.id||'');
+  const cuName=(cu.name||'').trim().toLowerCase();
+  const matches=(d)=>{
+    if(cuId&&String(d.customerId||'')===cuId)return true;
+    if(cuName&&(d.customerName||'').trim().toLowerCase()===cuName)return true;
+    return false;
+  };
+  const STORES=[
+    {s:'quotations',lbl:'ใบเสนอราคา',cls:'b-quo'},
+    {s:'invoices',lbl:'ใบกำกับ',cls:'b-inv'},
+    {s:'receipts',lbl:'ใบเสร็จ',cls:'b-rec'},
+    {s:'billings',lbl:'ใบวางบิล',cls:'b-bil'},
+    {s:'billing_combined',lbl:'ใบวางบิลรวม',cls:'b-blc'},
+  ];
+  const all=await Promise.all(STORES.map(x=>dbAll(x.s)));
+  let docs=[];
+  STORES.forEach((x,i)=>{
+    all[i].filter(matches).forEach(d=>docs.push({...d,_s:x.s,_lbl:x.lbl,_cls:x.cls}));
+  });
+  docs.sort((a,b)=>(b.docDate||b.createdAt||'').localeCompare(a.docDate||a.createdAt||''));
+
+  // summary stats
+  const cnt={quotations:0,invoices:0,receipts:0,billings:0,billing_combined:0};
+  let totSales=0,totReceived=0,totPending=0;
+  docs.forEach(d=>{
+    cnt[d._s]=(cnt[d._s]||0)+1;
+    if(d._s==='invoices')totSales+=Number(d.total||0);
+    if(d._s==='receipts')totReceived+=Number(d.total||0);
+    if(d._s==='billings'&&!d.paymentDate)totPending+=Number(d.total||0);
+  });
+
+  const rows=docs.length?docs.map(d=>
+    '<tr style="cursor:pointer" onclick="viewDocModal(\''+d._s+'\','+d.id+');closeModal()">'
+    +'<td style="padding:10px"><span class="badge '+d._cls+'">'+esc(d._lbl)+'</span></td>'
+    +'<td style="padding:10px;font-family:var(--font-mono);font-size:12px">'+esc(d.docNumber||'-')+'</td>'
+    +'<td style="padding:10px;color:var(--ink-2);font-size:12.5px">'+thDate(d.docDate||d.createdAt)+'</td>'
+    +'<td style="padding:10px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">฿'+fmoney(d.total||0)+'</td>'
+    +'</tr>'
+  ).join(''):'<tr><td colspan="4"><div class="empty" style="padding:30px 10px"><div class="empty-t">ยังไม่มีเอกสาร</div><div class="empty-s">ลูกค้านี้ยังไม่เคยมีการออกเอกสาร</div></div></td></tr>';
+
+  openModal(
+    '<div class="mh"><div class="mt"><div class="mt-icon">'+I.clock+'</div>ประวัติ — '+esc(cu.name)+'</div>'
+    +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div>'
+    +'<div class="mb">'
+    // customer info
+    +'<div style="background:var(--paper-2);border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12.5px;line-height:1.7">'
+    +'<div style="color:var(--ink-2)"><b style="color:var(--ink)">'+esc(cu.name)+'</b></div>'
+    +(cu.taxId?'<div style="color:var(--ink-3)">เลขผู้เสียภาษี: '+esc(cu.taxId)+'</div>':'')
+    +(cu.address?'<div style="color:var(--ink-3)">'+esc(cu.address)+'</div>':'')
+    +(cu.phone||cu.email?'<div style="color:var(--ink-3);margin-top:4px">'+esc(cu.phone||'')+(cu.phone&&cu.email?' · ':'')+esc(cu.email||'')+'</div>':'')
+    +'</div>'
+    // stats
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">'
+    +'<div style="background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px"><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">เอกสารทั้งหมด</div><div style="font-size:22px;font-weight:600;margin-top:4px">'+docs.length+'</div></div>'
+    +'<div style="background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px"><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">ยอดขาย</div><div style="font-size:18px;font-weight:600;margin-top:4px;color:var(--inv)">฿'+fmoney(totSales)+'</div></div>'
+    +'<div style="background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px"><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">รับเงินแล้ว</div><div style="font-size:18px;font-weight:600;margin-top:4px;color:var(--rec)">฿'+fmoney(totReceived)+'</div></div>'
+    +'<div style="background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r);padding:12px 14px"><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">ค้างชำระ</div><div style="font-size:18px;font-weight:600;margin-top:4px;color:var(--warning)">฿'+fmoney(totPending)+'</div></div>'
+    +'</div>'
+    +'<div style="border:1px solid var(--rule);border-radius:var(--r);overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--paper-2);color:var(--ink-2);font-size:11px;text-transform:uppercase;letter-spacing:.06em">'
+    +'<th style="padding:10px;text-align:left">ประเภท</th><th style="padding:10px;text-align:left">เลขที่</th><th style="padding:10px;text-align:left">วันที่</th><th style="padding:10px;text-align:right">ยอด</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</div>'
+    +'</div>'
+    +'<div class="mf"><button class="btn btn-ghost" onclick="closeModal()">ปิด</button></div>'
+  );
+}
+window.viewCustomerHistory=viewCustomerHistory;
 
 async function openCustomerForm(id=null){
   let cu=null;if(id)cu=await dbGet('customers',id);
