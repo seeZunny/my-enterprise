@@ -179,6 +179,7 @@ async function viewDocModal(store,id){
     '<div class="mh"><div class="mt"><div class="mt-icon" style="background:'+DOC_COLOR[store]+';color:#fff">'+I.eye+'</div>พรีวิว — '+esc(doc.docNumber)+'</div>'
     +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">'
     +convertBtns
+    +'<button class="btn btn-soft" title="ดาวน์โหลด PDF ทันที (ไม่ต้องผ่านหน้าต่างพิมพ์)" onclick="pdfDoc(\''+store+'\','+id+')">PDF</button>'
     +'<button class="btn btn-doc" style="background:'+DOC_COLOR[store]+'" onclick="printDoc(\''+store+'\','+id+')">'+I.print+' พิมพ์</button>'
     +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div></div>'
     +'<div class="mb" style="padding:14px;background:var(--surface-2)">'
@@ -212,6 +213,44 @@ async function convertDoc(srcStore,srcId,target){
   toast('เปิดฟอร์ม '+(target==='invoice'?'ใบกำกับ':target==='receipt'?'ใบเสร็จ':'ใบวางบิล')+'จาก '+(src.docNumber||'-'),'info');
 }
 window.convertDoc=convertDoc;
+
+// ============================================================
+// PDF EXPORT — generate A4 PDF directly (no print dialog)
+// ============================================================
+async function pdfDoc(store,id){
+  if(!window.html2pdf){toast('PDF library โหลดไม่สำเร็จ — เช็คอินเทอร์เน็ต','err');return;}
+  const[doc,set]=await Promise.all([dbGet(store,id),getSettings()]);
+  if(!doc){toast('ไม่พบเอกสาร','err');return;}
+  let invRefs=[];
+  if(doc.invoiceIds?.length){
+    const all=await dbAll('invoices');
+    invRefs=doc.invoiceIds.map(iid=>all.find(i=>i.id===iid)).filter(Boolean);
+  }
+  const html=buildDocHTML(doc,set,store,invRefs);
+  // offscreen container
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;width:210mm;background:#fff;font-family:\'Inter\',\'IBM Plex Sans Thai\',\'Sarabun\',sans-serif';
+  wrap.innerHTML='<style>.a4{width:210mm;min-height:297mm;background:#fff;padding:18mm 15mm;position:relative;page-break-after:always}</style>'+html;
+  document.body.appendChild(wrap);
+  toast('กำลังสร้าง PDF...','info');
+  try{
+    await window.html2pdf().set({
+      margin:0,
+      filename:(doc.docNumber||'document')+'.pdf',
+      image:{type:'jpeg',quality:.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',logging:false},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['css','legacy']}
+    }).from(wrap).save();
+    toast('PDF บันทึกเรียบร้อย');
+  }catch(e){
+    console.error('PDF generation failed',e);
+    toast('สร้าง PDF ล้มเหลว: '+(e.message||e),'err');
+  }finally{
+    wrap.remove();
+  }
+}
+window.pdfDoc=pdfDoc;
 
 async function printDoc(store,id){
   const[doc,set]=await Promise.all([dbGet(store,id),getSettings()]);
