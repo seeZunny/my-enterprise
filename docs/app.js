@@ -116,6 +116,41 @@ async function navigate(page){
 // ============================================================
 // DASHBOARD
 // ============================================================
+// monthly sparkline: returns inline SVG showing trend over the last 6 months
+function monthlySalesChart(docs,w=520,h=80,color='var(--inv)'){
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const ym=d.toISOString().slice(0,7);
+    const lbl=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()];
+    months.push({ym,lbl,total:0});
+  }
+  docs.forEach(doc=>{
+    const ym=(doc.docDate||doc.createdAt||'').slice(0,7);
+    const m=months.find(x=>x.ym===ym);if(m)m.total+=Number(doc.total||0);
+  });
+  const max=Math.max(...months.map(x=>x.total),1);
+  const padX=20,padY=14;
+  const innerW=w-padX*2,innerH=h-padY*2;
+  const pts=months.map((m,i)=>{
+    const x=padX+(months.length===1?innerW/2:(i*innerW/(months.length-1)));
+    const y=padY+innerH-(m.total/max)*innerH;
+    return {x,y,...m};
+  });
+  // smooth-ish polyline
+  const path=pts.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+  const areaPath=path+' L'+pts[pts.length-1].x.toFixed(1)+','+(h-padY)+' L'+pts[0].x.toFixed(1)+','+(h-padY)+' Z';
+  const dots=pts.map(p=>'<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3" fill="#fff" stroke="'+color+'" stroke-width="2"><title>'+p.lbl+': ฿'+fmoney(p.total)+'</title></circle>').join('');
+  const labels=pts.map(p=>'<text x="'+p.x.toFixed(1)+'" y="'+(h-2)+'" text-anchor="middle" font-size="9.5" fill="var(--ink-3)" font-weight="500">'+p.lbl+'</text>').join('');
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block;width:100%;height:'+h+'px">'
+    +'<defs><linearGradient id="spkg" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+areaPath+'" fill="url(#spkg)"/>'
+    +'<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +dots+labels
+    +'</svg>';
+}
+
 async function pgDashboard(){
   const[q,inv,rec,bil,custs]=await Promise.all([dbAll('quotations'),dbAll('invoices'),dbAll('receipts'),dbAll('billings'),dbAll('customers')]);
   const tInv=inv.reduce((s,i)=>s+(i.total||0),0);
@@ -123,6 +158,7 @@ async function pgDashboard(){
   const tQuo=q.reduce((s,i)=>s+(i.total||0),0);
   const pending=bil.filter(b=>!b.paymentDate);
   const tPend=pending.reduce((s,b)=>s+(b.total||0),0);
+  const totalDocs=q.length+inv.length+rec.length+bil.length;
   const recent=[
     ...q.slice(-3).map(d=>({...d,_s:'quotations',_lbl:'ใบเสนอ',_cls:'b-quo',_col:'var(--quo)'})),
     ...inv.slice(-4).map(d=>({...d,_s:'invoices',_lbl:'ใบกำกับ',_cls:'b-inv',_col:'var(--inv)'})),
@@ -140,9 +176,39 @@ async function pgDashboard(){
     +'<div class="ph-left">'
     +'<div class="eyebrow">'+thDate()+' · ภาพรวม</div>'
     +'<div class="pt" style="margin-top:8px">'+greet+'</div>'
-    +'<div class="ps">มีลูกค้าในระบบ <b>'+custs.length+'</b> ราย · เอกสารทั้งหมด <b>'+(q.length+inv.length+rec.length+bil.length)+'</b> ฉบับ</div>'
+    +'<div class="ps">มีลูกค้าในระบบ <b>'+custs.length+'</b> ราย · เอกสารทั้งหมด <b>'+totalDocs+'</b> ฉบับ</div>'
     +'</div></div>'
   );
+
+  // EMPTY STATE — first-run welcome with 3 CTAs (only when no docs yet)
+  if(totalDocs===0){
+    const empty=document.createElement('div');
+    empty.className='card';empty.style.cssText='margin-bottom:24px;padding:36px 32px';
+    empty.innerHTML='<div style="display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap">'
+      +'<div style="width:56px;height:56px;border-radius:14px;background:#fdecd6;color:#c2740a;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">👋</div>'
+      +'<div style="flex:1;min-width:200px">'
+      +'<div style="font-family:var(--font-display);font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.15">ยินดี<em style="color:var(--copper)">ต้อนรับ</em></div>'
+      +'<div style="color:var(--ink-2);font-size:14px;margin-top:4px;line-height:1.5">เริ่มใช้งานใน 3 ขั้น — ตั้งค่าบริษัท เพิ่มลูกค้า แล้วออกเอกสารแรก</div>'
+      +'</div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">'
+      +'<button class="card" style="text-align:left;padding:18px;border:1px solid var(--rule);background:var(--paper-2);cursor:pointer;border-radius:var(--r-lg);transition:all var(--t-fast)" onmouseover="this.style.background=\'var(--paper-3)\'" onmouseout="this.style.background=\'var(--paper-2)\'" onclick="navigate(\'settings\')">'
+      +'<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px">1</span>ขั้นแรก</div>'
+      +'<div style="font-weight:600;font-size:15px">ตั้งค่าบริษัท</div>'
+      +'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.5">ใส่ชื่อ ที่อยู่ เลขผู้เสียภาษี ข้อมูลบัญชี + อัปโลโก้</div>'
+      +'</button>'
+      +'<button class="card" style="text-align:left;padding:18px;border:1px solid var(--rule);background:var(--paper-2);cursor:pointer;border-radius:var(--r-lg);transition:all var(--t-fast)" onmouseover="this.style.background=\'var(--paper-3)\'" onmouseout="this.style.background=\'var(--paper-2)\'" onclick="navigate(\'customers\')">'
+      +'<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px">2</span>เพิ่ม</div>'
+      +'<div style="font-weight:600;font-size:15px">เพิ่มลูกค้า</div>'
+      +'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.5">ใส่ลูกค้าหลัก (ระบบจดจำที่อยู่อัตโนมัติเมื่อออกเอกสาร)</div>'
+      +'</button>'
+      +'<button class="card" style="text-align:left;padding:18px;border:1px solid var(--copper);background:var(--paper);cursor:pointer;border-radius:var(--r-lg);transition:all var(--t-fast)" onmouseover="this.style.background=\'var(--paper-3)\'" onmouseout="this.style.background=\'var(--paper)\'" onclick="openQuotationForm()">'
+      +'<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--copper);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:8px"><span style="width:20px;height:20px;border-radius:50%;background:var(--copper);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px">3</span>ออกเอกสาร</div>'
+      +'<div style="font-weight:600;font-size:15px">ใบเสนอราคาแรก</div>'
+      +'<div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.5">ลองออกใบจริง → แปลงเป็นใบกำกับ → ใบเสร็จ ในคลิกเดียว</div>'
+      +'</button>'
+      +'</div>';
+    c.appendChild(empty);
+  }
 
   // STATS
   const sg=document.createElement('div');sg.className='stats';
@@ -160,6 +226,29 @@ async function pgDashboard(){
       animateNumber(el,0,t,900,v=>{el.innerHTML=(cur?'<span class="currency">฿</span>':'')+Math.round(v).toLocaleString('th-TH');});
     });
   },80);
+
+  // SPARKLINE — monthly sales trend (only show if there are invoices)
+  if(inv.length){
+    const trend=document.createElement('div');trend.className='card';trend.style.cssText='margin-bottom:24px;padding:18px 22px';
+    const totalLastMonth=inv.filter(d=>{
+      const ym=(d.docDate||d.createdAt||'').slice(0,7);
+      const last=new Date();last.setMonth(last.getMonth()-1);
+      return ym===last.toISOString().slice(0,7);
+    }).reduce((s,d)=>s+Number(d.total||0),0);
+    const totalThisMonth=inv.filter(d=>{
+      const ym=(d.docDate||d.createdAt||'').slice(0,7);
+      return ym===new Date().toISOString().slice(0,7);
+    }).reduce((s,d)=>s+Number(d.total||0),0);
+    const delta=totalLastMonth>0?((totalThisMonth-totalLastMonth)/totalLastMonth)*100:0;
+    const deltaStr=totalLastMonth>0?(delta>=0?'+':'')+delta.toFixed(0)+'%':'—';
+    const deltaColor=delta>=0?'var(--success)':'var(--danger)';
+    trend.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
+      +'<div><div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600">ยอดขาย 6 เดือนล่าสุด</div>'
+      +'<div style="font-size:13px;color:var(--ink-2);margin-top:2px">เดือนนี้ <b>฿'+fmoney(totalThisMonth)+'</b> · <span style="color:'+deltaColor+'">'+deltaStr+'</span> เทียบเดือนก่อน</div></div>'
+      +'</div>'
+      +monthlySalesChart(inv,520,80,'#0066cc');
+    c.appendChild(trend);
+  }
 
   // RECENT + PENDING grid
   const grid=document.createElement('div');grid.className='dash-grid';
