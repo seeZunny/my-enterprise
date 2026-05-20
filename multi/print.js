@@ -167,16 +167,45 @@ async function viewDocModal(store,id){
   }
   const html=buildDocHTML(doc,set,store,invRefs);
   const previewHTML=html.replace(/<div class="a4">/g,'<div class="a4-prev" style="position:relative;min-height:auto;page-break-after:auto;margin-bottom:18px">');
+  let convertBtns='';
+  if(store==='quotations'){
+    convertBtns =
+      '<button class="btn btn-soft" title="สร้างใบกำกับจากใบเสนอนี้" onclick="convertDoc(\'quotations\','+id+',\'invoice\')">→ ใบกำกับ</button>'+
+      '<button class="btn btn-soft" title="ออกใบเสร็จจากใบเสนอนี้" onclick="convertDoc(\'quotations\','+id+',\'receipt\')">→ ใบเสร็จ</button>';
+  } else if(store==='invoices'){
+    convertBtns =
+      '<button class="btn btn-soft" title="ออกใบเสร็จจากใบกำกับนี้" onclick="convertDoc(\'invoices\','+id+',\'receipt\')">→ ใบเสร็จ</button>';
+  }
   openModal(
     '<div class="mh"><div class="mt"><div class="mt-icon" style="background:'+DOC_COLOR[store]+';color:#fff">'+I.eye+'</div>พรีวิว — '+esc(doc.docNumber)+'</div>'
-    +'<div style="display:flex;gap:8px;align-items:center">'
-    +'<button class="btn btn-doc" style="background:'+DOC_COLOR[store]+'" onclick="printDoc(\''+store+'\','+id+')">'+I.print+' พิมพ์ / Save PDF</button>'
+    +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">'
+    +convertBtns
+    +'<button class="btn btn-doc" style="background:'+DOC_COLOR[store]+'" onclick="printDoc(\''+store+'\','+id+')">'+I.print+' พิมพ์</button>'
     +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div></div>'
     +'<div class="mb" style="padding:14px;background:var(--surface-2)">'
     +'<div class="doc-viewer">'+previewHTML+'</div>'
     +'</div>'
   );
 }
+
+// ============================================================
+// CONVERT — quotation -> invoice/receipt, invoice -> receipt
+// ============================================================
+async function convertDoc(srcStore,srcId,target){
+  const src=await dbGet(srcStore,srcId);
+  if(!src){toast('ไม่พบเอกสารต้นทาง','err');return;}
+  const prefill={...src};
+  delete prefill.id;
+  if(srcStore==='invoices'&&target==='receipt')window._app.linkedInvoiceId=src.id;
+  closeModal();
+  setTimeout(()=>{
+    if(target==='invoice')openInvoiceForm(null,prefill);
+    else if(target==='receipt')openReceiptForm(null,prefill);
+    else if(target==='billing')openBillingForm(null,null,prefill);
+  },180);
+  toast('เปิดฟอร์ม '+(target==='invoice'?'ใบกำกับ':target==='receipt'?'ใบเสร็จ':'ใบวางบิล')+'จาก '+(src.docNumber||'-'),'info');
+}
+window.convertDoc=convertDoc;
 
 async function printDoc(store,id){
   const[doc,settings]=await Promise.all([dbGet(store,id),getSettings()]);

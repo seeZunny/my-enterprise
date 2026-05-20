@@ -376,6 +376,11 @@ async function saveDocGeneric(type,store,id,after){
       data.bankAccount=document.getElementById('f-bankno').value;
       data.bankAccountName=document.getElementById('f-bankname').value;
       data.payMethod=document.getElementById('f-paymethod').value;
+      // link to source invoice when created via invoice -> receipt conversion
+      if(window._app.linkedInvoiceId){
+        data.linkedInvoiceId=window._app.linkedInvoiceId;
+        window._app.linkedInvoiceId=null;
+      }
     }
     if(!data.docDate){toast('กรุณาระบุวันที่เอกสาร','err');return;}
     if(!data.customerName){toast('กรุณาระบุชื่อลูกค้า','err');return;}

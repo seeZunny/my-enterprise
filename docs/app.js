@@ -213,9 +213,11 @@ async function pgDashboard(){
 // ============================================================
 async function pgDocs(){
   const[q,inv,rec,bil,blc]=await Promise.all([dbAll('quotations'),dbAll('invoices'),dbAll('receipts'),dbAll('billings'),dbAll('billing_combined')]);
+  // payment linkage: build set of invoice IDs that have a receipt against them
+  const paidInvIds=new Set(rec.filter(r=>r.linkedInvoiceId).map(r=>Number(r.linkedInvoiceId)));
   const all=[
     ...q.map(d=>({...d,_s:'quotations',_lbl:'ใบเสนอ',_cls:'b-quo',_col:'var(--quo)'})),
-    ...inv.map(d=>({...d,_s:'invoices',_lbl:'ใบกำกับ',_cls:'b-inv',_col:'var(--inv)'})),
+    ...inv.map(d=>({...d,_s:'invoices',_lbl:'ใบกำกับ',_cls:'b-inv',_col:'var(--inv)',_paid:paidInvIds.has(Number(d.id))})),
     ...rec.map(d=>({...d,_s:'receipts',_lbl:'ใบเสร็จ',_cls:'b-rec',_col:'var(--rec)'})),
     ...bil.map(d=>({...d,_s:'billings',_lbl:'ใบวางบิล',_cls:'b-bil',_col:'var(--bil)'})),
     ...blc.map(d=>({...d,_s:'billing_combined',_lbl:'ใบวางบิลรวม',_cls:'b-blc',_col:'var(--blc)'})),
@@ -253,7 +255,8 @@ async function pgDocs(){
     if(!f.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-i">'+I.docs+'</div><div class="empty-t">ไม่พบเอกสาร</div></div></td></tr>';return;}
     f.forEach(d=>{
       const tr=document.createElement('tr');
-      tr.innerHTML='<td><span class="badge '+d._cls+'">'+d._lbl+'</span></td>'
+      const paidBadge=d._paid?' <span class="badge" style="background:var(--rec-soft);color:var(--rec);border-color:rgba(29,138,78,.22);font-size:9.5px">✓ จ่ายแล้ว</span>':'';
+      tr.innerHTML='<td><span class="badge '+d._cls+'">'+d._lbl+'</span>'+paidBadge+'</td>'
         +'<td><b class="tnum" style="color:'+d._col+'">'+esc(d.docNumber||'')+'</b></td>'
         +'<td style="color:var(--text-2)">'+thDate(d.docDate)+'</td>'
         +'<td>'+esc(d.customerName||'-')+'</td>'
@@ -608,12 +611,35 @@ async function saveCustomer(id){
 async function pgInventory(){
   const items=await dbAll('inventory');
   const c=document.getElementById('content');c.innerHTML='';
+  // Stock health: classify tracked items only (skip 'unlimited' ~ stock >= 100, typically services)
+  const TRACKED=(it)=>Number(it.stock||0)<100;
+  const lowItems=items.filter(it=>TRACKED(it)&&Number(it.stock||0)>0&&Number(it.stock||0)<=5);
+  const outItems=items.filter(it=>TRACKED(it)&&Number(it.stock||0)<=0);
   const ph=document.createElement('div');ph.className='ph';
   ph.innerHTML='<div class="ph-left"><div class="eyebrow">จัดการ</div><div class="pt" style="margin-top:8px">คลัง<em>สินค้า</em></div><div class="ps"><b>'+items.length+'</b> รายการ · ใช้ใน autocomplete ตอนออกเอกสาร</div></div>';
   const ab=document.createElement('button');ab.className='btn btn-accent';ab.innerHTML=I.plus+' เพิ่มสินค้า';
   ab.addEventListener('click',()=>openInventoryForm());
   const phAct=document.createElement('div');phAct.appendChild(ab);ph.appendChild(phAct);
   c.appendChild(ph);
+
+  // Low-stock alert banner — show only when something needs attention
+  let lowFilter=false;
+  if(outItems.length||lowItems.length){
+    const banner=document.createElement('div');
+    banner.style.cssText='background:linear-gradient(135deg,#fff5e6,#fff);border:1px solid var(--warning);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap';
+    banner.innerHTML='<div style="width:36px;height:36px;background:var(--warning);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">⚠</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px;color:var(--text)">มีสินค้าต้องดูแล</div>'
+      +'<div style="font-size:12.5px;color:var(--text-2);margin-top:2px">'
+      +(outItems.length?'<b style="color:var(--danger)">'+outItems.length+'</b> รายการ <b>หมดสต็อก</b>':'')
+      +(outItems.length&&lowItems.length?' · ':'')
+      +(lowItems.length?'<b style="color:var(--warning)">'+lowItems.length+'</b> รายการ <b>เหลือ ≤ 5</b>':'')
+      +'</div></div>';
+    const fbtn=document.createElement('button');fbtn.className='btn btn-soft';fbtn.id='inv-low-toggle';fbtn.textContent='ดูเฉพาะที่ต้องดูแล';
+    fbtn.onclick=()=>{lowFilter=!lowFilter;fbtn.textContent=lowFilter?'แสดงทั้งหมด':'ดูเฉพาะที่ต้องดูแล';fbtn.classList.toggle('btn-accent',lowFilter);fbtn.classList.toggle('btn-soft',!lowFilter);render();};
+    banner.appendChild(fbtn);
+    c.appendChild(banner);
+  }
+
   const card=document.createElement('div');card.className='card';
   const head=document.createElement('div');head.className='card-header';
   const sbar=document.createElement('div');sbar.className='sbar';sbar.style.width='320px';
@@ -626,7 +652,17 @@ async function pgInventory(){
   const tbody=document.createElement('tbody');tbl.appendChild(tbody);tw.appendChild(tbl);card.appendChild(tw);c.appendChild(card);
   function render(){
     const q=sinp.value.toLowerCase();tbody.innerHTML='';
-    const f=items.slice().reverse().filter(i=>!q||(i.name||'').toLowerCase().includes(q)||(i.sku||'').toLowerCase().includes(q));
+    let f=items.slice().filter(i=>!q||(i.name||'').toLowerCase().includes(q)||(i.sku||'').toLowerCase().includes(q));
+    if(lowFilter)f=f.filter(it=>TRACKED(it)&&Number(it.stock||0)<=5);
+    // sort: out-of-stock first, then low, then by id desc
+    f.sort((a,b)=>{
+      const sa=Number(a.stock||0),sb=Number(b.stock||0);
+      const ta=TRACKED(a),tb=TRACKED(b);
+      const wa=ta&&sa<=0?0:ta&&sa<=5?1:2;
+      const wb=tb&&sb<=0?0:tb&&sb<=5?1:2;
+      if(wa!==wb)return wa-wb;
+      return (b.id||0)-(a.id||0);
+    });
     if(!f.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-i">'+I.package+'</div><div class="empty-t">ยังไม่มีสินค้า</div></div></td></tr>';return;}
     f.forEach(it=>{
       const tr=document.createElement('tr');
