@@ -60,8 +60,9 @@ async function renderCmdK(q,keepHL){
     {sec:'ระบบ',icon:'database',title:'Backup & Restore',fn:()=>navigate('backup')},
   ];
 
-  let docs=[];
+  let docs=[],customers=[],items=[];
   if(q){
+    // Documents
     const stores=['quotations','invoices','receipts','billings','billing_combined'];
     const labels={quotations:'ใบเสนอ',invoices:'ใบกำกับ',receipts:'ใบเสร็จ',billings:'ใบวางบิล',billing_combined:'ใบวางบิลรวม'};
     for(const s of stores){
@@ -77,6 +78,30 @@ async function renderCmdK(q,keepHL){
         }
       });
     }
+    // Customers — show history on click
+    const allCust=await dbAll('customers');
+    allCust.forEach(cu=>{
+      if((cu.name||'').toLowerCase().includes(q)||(cu.taxId||'').includes(q)||(cu.phone||'').includes(q)){
+        customers.push({
+          sec:'ลูกค้า',icon:'user',
+          title:cu.name||'-',
+          sub:(cu.taxId?'เลขผู้เสียภาษี '+cu.taxId:'')+(cu.phone?' · '+cu.phone:''),
+          fn:()=>viewCustomerHistory(cu),
+        });
+      }
+    });
+    // Inventory items — open edit on click
+    const allInv=await dbAll('inventory');
+    allInv.forEach(it=>{
+      if((it.name||'').toLowerCase().includes(q)||(it.sku||'').toLowerCase().includes(q)){
+        items.push({
+          sec:'สินค้า',icon:'package',
+          title:it.name||'-',
+          sub:(it.sku?it.sku+' · ':'')+'฿'+fmoney(it.price||0)+(it.stock!=null?' · สต็อก '+it.stock:''),
+          fn:()=>openInventoryForm(it.id),
+        });
+      }
+    });
   }
 
   // filter actions
@@ -84,7 +109,7 @@ async function renderCmdK(q,keepHL){
     ? actions.filter(a=>a.title.toLowerCase().includes(q)||(a.sub||'').toLowerCase().includes(q))
     : actions;
 
-  _cmdkActions = [...filtered, ...docs];
+  _cmdkActions = [...filtered, ...docs, ...customers, ...items];
   if(!keepHL)_cmdkHL=0;
   if(_cmdkHL>=_cmdkActions.length)_cmdkHL=_cmdkActions.length-1;
   if(_cmdkHL<0)_cmdkHL=0;
