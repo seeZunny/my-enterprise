@@ -94,10 +94,29 @@
       </div>
       <nav class="tn-nav" id="tn-nav"></nav>
       <div class="tn-actions">
-        <a href="../" class="tn-app-switch" title="กลับไปเลือกระบบ" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;color:var(--ink-2);font-size:12px;font-weight:500;text-decoration:none;border:1px solid var(--rule);background:var(--paper);transition:background var(--t-fast)" onmouseover="this.style.background='var(--paper-3)'" onmouseout="this.style.background='var(--paper)'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span class="tn-app-label">Crocodile Enterprise</span>
-        </a>
+        <div class="tn-app-wrap" id="tn-app-wrap" style="position:relative">
+          <button class="tn-app-switch" onclick="toggleAppSwitch(event)" title="สลับระบบ" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;color:var(--ink-2);font-size:12px;font-weight:500;border:1px solid var(--rule);background:rgba(255,255,255,.6);cursor:pointer;font-family:inherit;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background var(--t-fast)" onmouseover="this.style.background='rgba(255,255,255,.9)'" onmouseout="this.style.background='rgba(255,255,255,.6)'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="tn-app-label">Crocodile Enterprise</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;opacity:.6"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div id="tn-app-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(0,0,0,.08);border-radius:12px;box-shadow:var(--shadow-lg);min-width:240px;z-index:60;padding:6px;animation:cmdkIn .2s">
+            <a href="./" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--paper-3);text-decoration:none;color:var(--ink);font-size:13px">
+              <span style="width:28px;height:28px;border-radius:7px;background:#fdecd6;color:#c2740a;display:flex;align-items:center;justify-content:center;font-size:14px">📄</span>
+              <span style="flex:1"><b>Crocodile Enterprise</b><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:1px">ระบบปัจจุบัน</div></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;color:var(--ink-3)"><polyline points="20 6 9 17 4 12"/></svg>
+            </a>
+            <a href="../multi/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:13px;transition:background var(--t-fast)" onmouseover="this.style.background='var(--paper-3)'" onmouseout="this.style.background=''">
+              <span style="width:28px;height:28px;border-radius:7px;background:#e3e3f8;color:#5856d6;display:flex;align-items:center;justify-content:center;font-size:14px">📋</span>
+              <span style="flex:1"><b>บิลรวมไม่ VAT</b><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:1px">Multi Documents</div></span>
+            </a>
+            <div style="height:1px;background:var(--rule);margin:6px 4px"></div>
+            <a href="../" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;text-decoration:none;color:var(--ink-2);font-size:12px;transition:background var(--t-fast)" onmouseover="this.style.background='var(--paper-3)'" onmouseout="this.style.background=''">
+              <span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:var(--ink-3)">⊞</span>
+              <span>หน้าเลือกระบบทั้งหมด</span>
+            </a>
+          </div>
+        </div>
         <button class="btn-cmdk" onclick="openCmdK()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           <span>ค้นหา · สร้าง</span>
@@ -334,6 +353,16 @@ function toggleCreateMenu(){
 }
 function closeCreateMenu(){const m=document.getElementById('create-menu');if(m){m.style.display='none';document.removeEventListener('click',_outsideCreate);}}
 function _outsideCreate(e){if(!e.target.closest('#create-wrap'))closeCreateMenu();}
+
+// App switcher dropdown
+function toggleAppSwitch(ev){
+  if(ev)ev.stopPropagation();
+  const m=document.getElementById('tn-app-menu');if(!m)return;
+  if(m.style.display==='none'){m.style.display='block';setTimeout(()=>document.addEventListener('click',_outsideAppSwitch),10);}
+  else closeAppSwitch();
+}
+function closeAppSwitch(){const m=document.getElementById('tn-app-menu');if(m){m.style.display='none';document.removeEventListener('click',_outsideAppSwitch);}}
+function _outsideAppSwitch(e){if(!e.target.closest('#tn-app-wrap'))closeAppSwitch();}
 
 function toggleMobDrawer(){document.getElementById('mob-drawer').classList.toggle('open');document.getElementById('mob-ov').classList.toggle('open');}
 function closeMobDrawer(){document.getElementById('mob-drawer').classList.remove('open');document.getElementById('mob-ov').classList.remove('open');}
