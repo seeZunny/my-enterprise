@@ -61,36 +61,6 @@ function renderSidebar(counts={}){
       n.addEventListener('click',()=>navigate(it.key));
       tn.appendChild(n);
     });
-
-    // "เพิ่มเติม" dropdown for items not in PRIMARY_NAV
-    const moreItems=NAV.flatMap(g=>g.items.map(it=>({...it,sec:g.sec}))).filter(it=>!PRIMARY_NAV.includes(it.key));
-    if(moreItems.length){
-      const wrap=document.createElement('div');wrap.id='more-wrap';wrap.style.cssText='position:relative;display:inline-block';
-      const btn=document.createElement('div');btn.className='tn-item';btn.id='more-btn';
-      btn.innerHTML='<span>เพิ่มเติม</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;margin-left:2px"><path d="m6 9 6 6 6-6"/></svg>';
-      btn.addEventListener('click',e=>{e.stopPropagation();toggleMoreMenu();});
-      wrap.appendChild(btn);
-      const menu=document.createElement('div');menu.id='more-menu';
-      menu.style.cssText='display:none;position:absolute;top:calc(100% + 8px);left:0;background:var(--paper);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow-lg);min-width:240px;z-index:60;padding:6px;animation:cmdkIn .2s';
-      let lastSec='';
-      moreItems.forEach(it=>{
-        if(it.sec!==lastSec){
-          const sh=document.createElement('div');
-          sh.style.cssText='padding:8px 12px 4px;font-size:10.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em';
-          sh.textContent=it.sec;menu.appendChild(sh);lastSec=it.sec;
-        }
-        const c=counts[it.key];
-        const d=document.createElement('div');
-        d.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;transition:background var(--t-fast);font-size:13px';
-        d.onmouseover=()=>d.style.background='var(--paper-3)';
-        d.onmouseout=()=>d.style.background='';
-        d.innerHTML='<span style="color:var(--ink-2);display:flex;align-items:center;width:14px;height:14px">'+I[it.icon]+'</span><span style="flex:1">'+esc(it.label)+'</span>'+(c!=null&&c>0?'<span style="font-size:11px;color:var(--ink-3);background:var(--paper-3);padding:1px 7px;border-radius:999px">'+c+'</span>':'');
-        d.addEventListener('mousedown',e=>{e.preventDefault();closeMoreMenu();setTimeout(()=>navigate(it.key),20);});
-        menu.appendChild(d);
-      });
-      wrap.appendChild(menu);
-      tn.appendChild(wrap);
-    }
   }
   // Mobile drawer (full list)
   const md=document.getElementById('md-nav');
@@ -110,31 +80,9 @@ function renderSidebar(counts={}){
   highlightNav(window._app.page);
 }
 function highlightNav(key){
-  document.querySelectorAll('.tn-item').forEach(n=>{
-    // skip the "more" trigger button
-    if(n.id==='more-btn')return;
-    n.classList.toggle('active',n.dataset.page===key);
-  });
+  document.querySelectorAll('.tn-item').forEach(n=>n.classList.toggle('active',n.dataset.page===key));
   document.querySelectorAll('.md-item').forEach(n=>n.classList.toggle('active',n.dataset.page===key));
-  // Highlight "More" button if active page is in the More menu
-  const mb=document.getElementById('more-btn');
-  if(mb){
-    const isMoreActive=!PRIMARY_NAV.includes(key)&&NAV.flatMap(g=>g.items).some(it=>it.key===key);
-    mb.classList.toggle('active',isMoreActive);
-  }
 }
-
-function toggleMoreMenu(){
-  const m=document.getElementById('more-menu');if(!m)return;
-  if(m.style.display==='none'){m.style.display='block';setTimeout(()=>document.addEventListener('click',_outsideMore),10);}
-  else closeMoreMenu();
-}
-function closeMoreMenu(){
-  const m=document.getElementById('more-menu');
-  if(m){m.style.display='none';document.removeEventListener('click',_outsideMore);}
-}
-function _outsideMore(e){if(!e.target.closest('#more-wrap'))closeMoreMenu();}
-window.toggleMoreMenu=toggleMoreMenu;window.closeMoreMenu=closeMoreMenu;
 
 async function refreshNavCounts(){
   const[q,inv,rec,bil,blc]=await Promise.all([dbAll('quotations'),dbAll('invoices'),dbAll('receipts'),dbAll('billings'),dbAll('billing_combined')]);
