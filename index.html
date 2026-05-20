@@ -16,6 +16,9 @@
 <meta name="apple-mobile-web-app-title" content="My Enterprise">
 <meta name="application-name" content="My Enterprise">
 
+<!-- Theme: apply before paint to prevent flash -->
+<script>(function(){var p=localStorage.getItem('theme')||'auto';var d=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');})();</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -140,6 +143,43 @@ footer{text-align:center;padding:24px;color:var(--ink-3);font-size:11.5px}
   .app-card{padding:24px 22px 22px}
   .app-title{font-size:26px}
 }
+
+/* DARK MODE */
+html.dark{
+  --paper:#1c1c1e;--paper-2:#2c2c2e;--paper-3:#3a3a3c;--paper-4:#48484a;
+  --ink:#f2f2f7;--ink-2:#aeaeb2;--ink-3:#8e8e93;
+  --rule:#38383a;--rule-2:#48484a;
+  --copper:#f2f2f7;--copper-soft:#3a3a3c;
+  --indigo:#f2f2f7;--indigo-soft:#3a3a3c;
+  --shadow-lg:0 12px 40px -8px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.5);
+}
+html.dark body{
+  background:
+    radial-gradient(900px 600px at 12% 0%,rgba(70,90,160,.18),transparent 60%),
+    radial-gradient(800px 600px at 90% 8%,rgba(110,70,150,.15),transparent 55%),
+    radial-gradient(700px 700px at 50% 100%,rgba(60,110,130,.12),transparent 60%),
+    #0a0a0c;
+  color:var(--ink);
+}
+html.dark .app-icon.copper{background:#33270f;color:#ffb340}
+html.dark .app-icon.indigo{background:#1c1b3a;color:#8f8df5}
+html.dark .app-icon.gray{background:var(--paper-3);color:var(--ink-3)}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  html.dark .app-card{background:rgba(28,28,30,.6);border-color:rgba(255,255,255,.08)}
+  html.dark .auth-card{background:rgba(28,28,30,.85);border-color:rgba(255,255,255,.06)}
+  html.dark #auth-ov{background:rgba(10,10,12,.7)}
+}
+html.dark .app-cta{border-top-color:var(--rule)}
+
+#theme-btn{
+  position:fixed;top:24px;right:80px;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--rule);background:rgba(255,255,255,.6);cursor:pointer;
+  font-size:15px;display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:background var(--t-fast);z-index:10;
+}
+html.dark #theme-btn{background:rgba(60,60,67,.4);border-color:rgba(255,255,255,.1)}
+#theme-btn:hover{background:rgba(255,255,255,.9)}
 </style>
 </head>
 <body>
@@ -163,6 +203,8 @@ footer{text-align:center;padding:24px;color:var(--ink-3);font-size:11.5px}
     <div id="auth-msg"></div>
   </div>
 </div>
+
+<button id="theme-btn" type="button" onclick="toggleTheme()">🌗</button>
 
 <div id="shell" style="display:none">
   <header>
@@ -315,6 +357,28 @@ async function signOut(){
   if(!confirm('ออกจากระบบ?'))return;
   await _sb.auth.signOut();
 }
+
+// THEME — light / dark / auto cycle
+function applyTheme(){
+  const pref=localStorage.getItem('theme')||'auto';
+  const dark=pref==='dark'||(pref==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark',dark);
+  const btn=document.getElementById('theme-btn');
+  if(btn){
+    btn.textContent=pref==='dark'?'🌙':pref==='light'?'☀️':'🌗';
+    btn.title='โหมด: '+(pref==='dark'?'มืด':pref==='light'?'สว่าง':'อัตโนมัติ')+' — คลิกเพื่อสลับ';
+  }
+}
+function toggleTheme(){
+  const cur=localStorage.getItem('theme')||'auto';
+  const next=cur==='light'?'dark':cur==='dark'?'auto':'light';
+  localStorage.setItem('theme',next);
+  applyTheme();
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if((localStorage.getItem('theme')||'auto')==='auto')applyTheme();
+});
 
 init();
 </script>

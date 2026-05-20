@@ -8,6 +8,9 @@
 <!-- App namespace (required before core.js loads) -->
 <script>window.APP_NAMESPACE='docs';</script>
 
+<!-- Theme: apply before paint to prevent flash -->
+<script>(function(){var p=localStorage.getItem('theme')||'auto';var d=p==='dark'||(p==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');})();</script>
+
 <!-- PWA -->
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" type="image/svg+xml" href="../icon.svg">
@@ -22,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260516c">
+<link rel="stylesheet" href="styles.css?v=20260516d">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   /* Auth overlay */
@@ -307,9 +310,43 @@ async function signOut(){
   // onAuthStateChange handles reload
 }
 
+// THEME — light / dark / auto cycle
+function applyTheme(){
+  const pref=localStorage.getItem('theme')||'auto';
+  const dark=pref==='dark'||(pref==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark',dark);
+  const btn=document.getElementById('theme-btn');
+  if(btn){
+    const icon=pref==='dark'?'🌙':pref==='light'?'☀️':'🌗';
+    btn.textContent=icon;
+    btn.title='โหมด: '+(pref==='dark'?'มืด':pref==='light'?'สว่าง':'อัตโนมัติ (ตามระบบ)')+' — คลิกเพื่อสลับ';
+  }
+}
+function toggleTheme(){
+  const cur=localStorage.getItem('theme')||'auto';
+  const next=cur==='light'?'dark':cur==='dark'?'auto':'light';
+  localStorage.setItem('theme',next);
+  applyTheme();
+  const label=next==='dark'?'มืด':next==='light'?'สว่าง':'อัตโนมัติ';
+  if(typeof toast==='function')toast('โหมด: '+label,'info');
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if((localStorage.getItem('theme')||'auto')==='auto')applyTheme();
+});
+
 function renderUserChip(){
   const actions=document.querySelector('.tn-actions');
   if(!actions||document.getElementById('tn-user'))return;
+  // theme toggle button (only once)
+  if(!document.getElementById('theme-btn')){
+    const tb=document.createElement('button');
+    tb.id='theme-btn';tb.type='button';tb.onclick=toggleTheme;
+    tb.style.cssText='width:32px;height:32px;border-radius:50%;border:1px solid var(--rule);background:rgba(255,255,255,.6);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background var(--t-fast)';
+    tb.onmouseover=()=>tb.style.background='rgba(255,255,255,.9)';
+    tb.onmouseout=()=>tb.style.background='rgba(255,255,255,.6)';
+    actions.appendChild(tb);
+    applyTheme();
+  }
   window._sb.auth.getUser().then(({data})=>{
     const u=data&&data.user;if(!u)return;
     const email=u.email||'';

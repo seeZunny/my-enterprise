@@ -846,3 +846,62 @@ body{
   .fc,select.fc,textarea.fc{min-height:46px;font-size:16px}
   .it input,.it select{font-size:16px}
 }
+
+/* ============================================================
+   DARK MODE (Apple-style) — toggled via <html class="dark">
+   ============================================================ */
+html.dark{
+  --bg:#0a0a0c;
+  --paper:#1c1c1e;
+  --paper-2:#2c2c2e;
+  --paper-3:#3a3a3c;
+  --paper-4:#48484a;
+  --ink:#f2f2f7;
+  --ink-2:#aeaeb2;
+  --ink-3:#8e8e93;
+  --ink-4:#636366;
+  --rule:#38383a;
+  --rule-2:#48484a;
+  --copper:#f2f2f7;
+  --copper-2:#ffffff;
+  --copper-soft:#3a3a3c;
+  --copper-tint:#48484a;
+  --headline:#f2f2f7;
+  --quo:#ffb340;   --quo-soft:#33270f;   --quo-bg:#1f1809;
+  --inv:#5cb1ff;   --inv-soft:#102338;   --inv-bg:#0a1827;
+  --rec:#4cd884;   --rec-soft:#0e2a1d;   --rec-bg:#091e14;
+  --bil:#8f8df5;   --bil-soft:#1c1b3a;   --bil-bg:#13122a;
+  --blc:#d985ee;   --blc-soft:#2a1635;   --blc-bg:#1d0f23;
+  --success:#30d158; --warning:#ff9f0a; --danger:#ff453a; --info:#5cb1ff;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.45);
+  --shadow:0 1px 3px rgba(0,0,0,.4), 0 6px 16px -6px rgba(0,0,0,.5);
+  --shadow-lg:0 12px 40px -8px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.4);
+}
+html.dark body{
+  background:
+    radial-gradient(900px 600px at 12% 0%, rgba(70,90,160,.18), transparent 60%),
+    radial-gradient(800px 600px at 90% 10%, rgba(110,70,150,.15), transparent 55%),
+    radial-gradient(700px 700px at 50% 100%, rgba(60,110,130,.12), transparent 60%),
+    #0a0a0c;
+}
+html.dark *::selection{background:rgba(255,255,255,.18);color:inherit}
+
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  html.dark .card,html.dark .card-flat{
+    background:rgba(28,28,30,.62);border-color:rgba(255,255,255,.08);
+    box-shadow:0 1px 1px rgba(0,0,0,.4),0 10px 30px -12px rgba(0,0,0,.55);
+  }
+  html.dark .stats{background:rgba(28,28,30,.55);border-color:rgba(255,255,255,.08)}
+  html.dark .modal{background:rgba(28,28,30,.86);border-left:1px solid rgba(255,255,255,.06)}
+  html.dark .mh,html.dark .mf{background:rgba(28,28,30,.5)}
+  html.dark .overlay{background:rgba(0,0,0,.55)}
+  html.dark .cmdk-ov{background:rgba(0,0,0,.6)}
+  html.dark .cmdk{background:rgba(28,28,30,.92)}
+  html.dark #topnav{background:rgba(28,28,30,.65);border-bottom:1px solid rgba(255,255,255,.08)}
+  html.dark #mob-drawer{background:rgba(28,28,30,.92)}
+}
+/* mobile: keep solid sheets on dark too */
+@media(max-width:720px){
+  html.dark .modal{background:#1c1c1e!important}
+  html.dark .mh,html.dark .mf{background:#1c1c1e!important;border-color:var(--rule)}
+}
