@@ -28,8 +28,8 @@ const NAV=[
     {key:'quotation',label:'ใบเสนอราคา',icon:'quote'},
     {key:'invoice',label:'ใบกำกับ / ใบส่งของ',icon:'invoice'},
     {key:'receipt',label:'ใบเสร็จรับเงิน',icon:'receipt'},
-    {key:'billing',label:'ใบวางบิล',icon:'billing'},
-    {key:'billing-combined',label:'ใบวางบิลรวม',icon:'billings'},
+    {key:'billing',label:'ใบวางบิล (ทั้งหมด)',icon:'billing'},
+    {key:'print-billing-summary',label:'พิมพ์สรุปยอด',icon:'print',action:()=>printBillingSummary(null)},
   ]},
   {sec:'จัดการ',items:[
     {key:'customers',label:'ลูกค้า / คู่ค้า',icon:'users'},
@@ -71,7 +71,11 @@ function renderSidebar(counts={}){
         const n=document.createElement('div');n.className='md-item';n.dataset.page=it.key;
         const c=counts[it.key];
         n.innerHTML=I[it.icon]+'<span style="flex:1">'+esc(it.label)+'</span>'+(c!=null&&c>0?'<span style="font-size:11px;color:var(--ink-3)">'+c+'</span>':'');
-        n.addEventListener('click',()=>{navigate(it.key);closeMobDrawer();});
+        n.addEventListener('click',()=>{
+          closeMobDrawer();
+          if(typeof it.action==='function')setTimeout(it.action,150);
+          else navigate(it.key);
+        });
         md.appendChild(n);
       });
     });
@@ -453,36 +457,122 @@ async function pgInvoice(){
 async function pgReceipt(){
   await renderDocList({store:'receipts',title:'ใบเสร็จรับเงิน',color:'var(--rec)',icon:'rec',addFn:()=>openReceiptForm(),addLabel:'สร้างใบเสร็จ'});
 }
+// Unified billing list — shows both 'billings' and 'billing_combined' together
 async function pgBilling(){
-  await renderDocList({store:'billings',title:'ใบวางบิล',color:'var(--bil)',icon:'bil',addFn:()=>openBillingForm(),addLabel:'สร้างใบวางบิล',
-    extraHeaderBtn:{icon:'print',label:'พิมพ์สรุปยอด',fn:()=>printBillingSummary('billings')},
-    convertActions:[{icon:'receipt',label:'รับเงิน',color:'#10b981',bg:'#ecfdf5',fn:async d=>{
-      if(d.paymentDate){toast('รับเงินไปแล้วเมื่อ '+thDate(d.paymentDate),'info');return;}
-      if(!confirm('ยืนยันรับเงินสำหรับใบวางบิล '+d.docNumber+'?'))return;
-      d.paymentDate=todayISO();await dbPut('billings',d);toast('บันทึกรับเงินเรียบร้อย');navigate('billing');
-    }}],
+  const[bil,blc]=await Promise.all([dbAll('billings'),dbAll('billing_combined')]);
+  const all=[
+    ...bil.map(d=>({...d,_s:'billings',_lbl:'ใบวางบิล',_cls:'b-bil',_col:'var(--bil)'})),
+    ...blc.map(d=>({...d,_s:'billing_combined',_lbl:'ใบวางบิลรวม',_cls:'b-blc',_col:'var(--blc)'})),
+  ].sort((a,b)=>(b.docDate||'').localeCompare(a.docDate||''));
+
+  const c=document.getElementById('content');c.innerHTML='';
+  const ph=document.createElement('div');ph.className='ph';
+  ph.innerHTML='<div class="ph-left"><div class="eyebrow">เอกสาร</div><div class="pt" style="margin-top:8px">ใบวางบิล <em>(ทั้งหมด)</em></div><div class="ps">ใบวางบิล <b>'+bil.length+'</b> + ใบวางบิลรวม <b>'+blc.length+'</b> = <b>'+all.length+'</b> ฉบับ</div></div>';
+  const phAct=document.createElement('div');phAct.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+  const ab1=document.createElement('button');ab1.className='btn btn-doc btn-bil';
+  ab1.innerHTML=I.plus+' ใบวางบิล';
+  ab1.addEventListener('click',()=>openBillingForm());
+  const ab2=document.createElement('button');ab2.className='btn btn-doc btn-blc';
+  ab2.innerHTML=I.plus+' ใบวางบิลรวม';
+  ab2.addEventListener('click',()=>openBillingCombinedForm());
+  phAct.appendChild(ab1);phAct.appendChild(ab2);ph.appendChild(phAct);
+  c.appendChild(ph);
+
+  // total + pending summary chips
+  const total=all.reduce((s,d)=>s+Number(d.total||0),0);
+  const paidTot=all.filter(d=>d.paymentDate).reduce((s,d)=>s+Number(d.total||0),0);
+  const pendTot=total-paidTot;
+  const sum=document.createElement('div');
+  sum.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px';
+  sum.innerHTML='<div style="background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px"><div style="font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600">ยอดรวม</div><div style="font-size:22px;font-weight:600;margin-top:4px">฿'+fmoney(total)+'</div></div>'
+    +'<div style="background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px"><div style="font-size:10.5px;color:var(--success);text-transform:uppercase;letter-spacing:.06em;font-weight:600">รับชำระแล้ว</div><div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--success)">฿'+fmoney(paidTot)+'</div></div>'
+    +'<div style="background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);padding:14px 16px"><div style="font-size:10.5px;color:var(--warning);text-transform:uppercase;letter-spacing:.06em;font-weight:600">ค้างชำระ</div><div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--warning)">฿'+fmoney(pendTot)+'</div></div>';
+  c.appendChild(sum);
+
+  // search + table
+  const card=document.createElement('div');card.className='card';
+  const head=document.createElement('div');head.className='card-header';
+  const sbar=document.createElement('div');sbar.className='sbar';sbar.style.width='320px';
+  sbar.innerHTML=I.search;
+  const sinp=document.createElement('input');sinp.placeholder='ค้นหา...';sbar.appendChild(sinp);
+  // filter chip
+  let typeFilter='all';
+  const chips=document.createElement('div');chips.style.cssText='display:flex;gap:6px;margin-left:auto';
+  ['all','billings','billing_combined'].forEach((k,i)=>{
+    const ch=document.createElement('button');ch.className='btn btn-soft';
+    if(k==='all')ch.classList.add('btn-accent');
+    ch.style.cssText='padding:6px 12px;font-size:12px';
+    ch.textContent=k==='all'?'ทั้งหมด':k==='billings'?'ใบวางบิล':'ใบวางบิลรวม';
+    ch.dataset.k=k;
+    ch.addEventListener('click',()=>{typeFilter=k;chips.querySelectorAll('button').forEach(b=>{b.classList.toggle('btn-accent',b.dataset.k===k);b.classList.toggle('btn-soft',b.dataset.k!==k);});render();});
+    chips.appendChild(ch);
   });
+  head.appendChild(sbar);head.appendChild(chips);card.appendChild(head);
+
+  const tw=document.createElement('div');tw.className='tw';
+  const tbl=document.createElement('table');
+  tbl.innerHTML='<thead><tr><th>ประเภท</th><th>เลขที่</th><th>วันที่</th><th>ลูกค้า</th><th style="text-align:right">ยอดรวม</th><th style="text-align:center">สถานะ</th><th style="text-align:center;width:240px">จัดการ</th></tr></thead>';
+  const tbody=document.createElement('tbody');tbl.appendChild(tbody);tw.appendChild(tbl);card.appendChild(tw);c.appendChild(card);
+
+  function render(){
+    const q=sinp.value.toLowerCase();tbody.innerHTML='';
+    let f=all.filter(d=>(typeFilter==='all'||d._s===typeFilter)&&(!q||(d.docNumber||'').toLowerCase().includes(q)||(d.customerName||'').toLowerCase().includes(q)));
+    if(!f.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-i">'+I.billing+'</div><div class="empty-t">ยังไม่มีใบวางบิล</div><div class="empty-s">กดปุ่ม "+ ใบวางบิล" หรือ "+ ใบวางบิลรวม" ด้านบน</div></div></td></tr>';return;}
+    f.forEach(d=>{
+      const tr=document.createElement('tr');
+      const paidBadge=d.paymentDate?'<span class="badge" style="background:var(--rec-soft);color:var(--rec);border-color:rgba(29,138,78,.22)">รับแล้ว '+thDateShort(d.paymentDate)+'</span>':'<span class="badge" style="background:#fff5e6;color:var(--warning);border-color:rgba(178,80,0,.22)">ค้างชำระ</span>';
+      tr.innerHTML='<td><span class="badge '+d._cls+'">'+d._lbl+'</span></td>'
+        +'<td><b class="tnum" style="color:'+d._col+'">'+esc(d.docNumber||'')+'</b></td>'
+        +'<td style="color:var(--text-2)">'+thDate(d.docDate)+'</td>'
+        +'<td>'+esc(d.customerName||'-')+(d.invoiceCount?'<span style="color:var(--text-3);font-size:11px;margin-left:6px">· '+d.invoiceCount+' ใบ</span>':'')+'</td>'
+        +'<td style="text-align:right" class="tnum"><b>฿'+fmoney(d.total)+'</b></td>'
+        +'<td style="text-align:center">'+paidBadge+'</td>'
+        +'<td></td>';
+      const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:4px;justify-content:center;flex-wrap:wrap';
+      const mk=(html,fn,cls='btn btn-soft btn-sm')=>{const b=document.createElement('button');b.className=cls;b.innerHTML=html;b.addEventListener('click',fn);return b;};
+      wrap.appendChild(mk(I.eye,()=>viewDocModal(d._s,d.id)));
+      if(d._s==='billings'&&!d.paymentDate){
+        wrap.appendChild(mk(I.receipt+' รับเงิน',async()=>{
+          if(!confirm('ยืนยันรับเงินสำหรับ '+d.docNumber+'?'))return;
+          d.paymentDate=todayISO();await dbPut('billings',d);toast('บันทึกรับเงินเรียบร้อย');navigate('billing');
+        },'btn btn-success btn-sm'));
+      }
+      wrap.appendChild(mk(I.edit,()=>editDoc(d._s,d.id)));
+      wrap.appendChild(mk(I.print,()=>printDoc(d._s,d.id)));
+      wrap.appendChild(mk(I.trash,()=>deleteDoc(d._s,d.id,()=>navigate('billing')),'btn btn-danger-soft btn-sm'));
+      tr.querySelector('td:last-child').appendChild(wrap);
+      tbody.appendChild(tr);
+    });
+  }
+  sinp.addEventListener('input',render);render();
 }
+
+// Kept for cmdk / legacy URLs — still accessible if someone navigates here directly
 async function pgBillingCombined(){
-  await renderDocList({store:'billing_combined',title:'ใบวางบิลรวม',color:'var(--blc)',icon:'blc',addFn:()=>openBillingCombinedForm(),addLabel:'สร้างใบวางบิลรวม',
-    extraHeaderBtn:{icon:'print',label:'พิมพ์สรุปยอด',fn:()=>printBillingSummary('billing_combined')},
-  });
+  await renderDocList({store:'billing_combined',title:'ใบวางบิลรวม',color:'var(--blc)',icon:'blc',addFn:()=>openBillingCombinedForm(),addLabel:'สร้างใบวางบิลรวม'});
 }
 
 // ============================================================
 // BILLING SUMMARY REPORT — printable list with totals
 // ============================================================
+// store === null -> include both 'billings' AND 'billing_combined'
 async function printBillingSummary(store){
-  const docs=await dbAll(store);
-  if(!docs.length){toast('ยังไม่มีเอกสารให้พิมพ์','info');return;}
-  const set=await getSettings();
+  let preview;
+  if(store===null||store==='all'){
+    const[bil,blc]=await Promise.all([dbAll('billings'),dbAll('billing_combined')]);
+    preview=bil.length+blc.length;
+  }else{
+    preview=(await dbAll(store)).length;
+  }
+  if(!preview){toast('ยังไม่มีเอกสารให้พิมพ์','info');return;}
 
-  // ask for date range (default: this month)
   const today=new Date();
   const firstOfMonth=new Date(today.getFullYear(),today.getMonth(),1).toISOString().slice(0,10);
   const todayStr=today.toISOString().slice(0,10);
+  const titleLabel=store===null||store==='all'?'ใบวางบิล (รวมทั้ง 2 ประเภท)':store==='billings'?'ใบวางบิล':'ใบวางบิลรวม';
+  const storeArg=store===null?'null':"'"+store+"'";
   openModal(
-    '<div class="mh"><div class="mt"><div class="mt-icon">'+I.print+'</div>พิมพ์สรุปยอด '+(store==='billings'?'ใบวางบิล':'ใบวางบิลรวม')+'</div>'
+    '<div class="mh"><div class="mt"><div class="mt-icon">'+I.print+'</div>พิมพ์สรุปยอด '+titleLabel+'</div>'
     +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div>'
     +'<div class="mb">'
     +'<div class="ps" style="margin-bottom:18px">เลือกช่วงวันที่ — ถ้าไม่เลือก จะรวมทั้งหมด</div>'
@@ -496,8 +586,8 @@ async function printBillingSummary(store){
     +'</div>'
     +'</div>'
     +'<div class="mf"><button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>'
-    +'<button class="btn btn-soft" onclick="_runBillingSummary(\''+store+'\',true)">'+I.print+' ทั้งหมด (ไม่กรอง)</button>'
-    +'<button class="btn btn-accent" onclick="_runBillingSummary(\''+store+'\',false)">'+I.print+' พิมพ์ตามตัวเลือก</button></div>'
+    +'<button class="btn btn-soft" onclick="_runBillingSummary('+storeArg+',true)">'+I.print+' ทั้งหมด (ไม่กรอง)</button>'
+    +'<button class="btn btn-accent" onclick="_runBillingSummary('+storeArg+',false)">'+I.print+' พิมพ์ตามตัวเลือก</button></div>'
   );
 }
 
@@ -507,7 +597,17 @@ async function _runBillingSummary(store,all){
   const onlyPaid=document.getElementById('sm-onlypaid')?.checked;
   const onlyPending=document.getElementById('sm-onlypending')?.checked;
   closeModal();
-  const [docs,invAll,set]=await Promise.all([dbAll(store),dbAll('invoices'),getSettings()]);
+  let docs;
+  if(store===null||store==='all'){
+    const[bil,blc]=await Promise.all([dbAll('billings'),dbAll('billing_combined')]);
+    docs=[
+      ...bil.map(d=>({...d,_type:'ใบวางบิล'})),
+      ...blc.map(d=>({...d,_type:'ใบวางบิลรวม'})),
+    ];
+  }else{
+    docs=(await dbAll(store)).map(d=>({...d,_type:store==='billings'?'ใบวางบิล':'ใบวางบิลรวม'}));
+  }
+  const [invAll,set]=await Promise.all([dbAll('invoices'),getSettings()]);
   const invMap={};invAll.forEach(i=>{invMap[i.id]=i;});
   let list=docs.slice();
   if(!all){
@@ -519,24 +619,29 @@ async function _runBillingSummary(store,all){
   list.sort((a,b)=>(a.docDate||'').localeCompare(b.docDate||''));
   if(!list.length){toast('ไม่มีเอกสารตามตัวเลือก','info');return;}
 
-  const title=store==='billings'?'สรุปยอดใบวางบิล':'สรุปยอดใบวางบิลรวม';
+  const title=store===null||store==='all'?'สรุปยอดใบวางบิล (ทั้ง 2 ประเภท)':store==='billings'?'สรุปยอดใบวางบิล':'สรุปยอดใบวางบิลรวม';
   const period=all?'ทั้งหมด':(from?thDate(from):'ต้นเรื่อง')+' — '+(to?thDate(to):'ปัจจุบัน');
   const total=list.reduce((s,d)=>s+Number(d.total||0),0);
   const paidTotal=list.filter(d=>d.paymentDate).reduce((s,d)=>s+Number(d.total||0),0);
   const pendingTotal=total-paidTotal;
 
+  const showType=(store===null||store==='all');
   const rows=list.map((d,i)=>{
     const invNums=(d.invoiceIds||[]).map(iid=>invMap[iid]?.docNumber||'').filter(Boolean).join(', ');
+    const typeCell=showType?'<td style="padding:8px 10px;font-size:10.5px;border-bottom:1px solid #f1f5f9"><span style="background:'+(d._type==='ใบวางบิลรวม'?'#f3ddf7;color:#a23bb8':'#e3e3f8;color:#5856d6')+';padding:2px 7px;border-radius:999px;font-weight:600">'+d._type+'</span></td>':'';
     return '<tr>'
       +'<td style="text-align:center;padding:8px 6px;color:#64748b;font-size:11px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'
+      +typeCell
       +'<td style="padding:8px 10px;font-family:monospace;font-size:12px;border-bottom:1px solid #f1f5f9">'+esc(d.docNumber||'-')+'</td>'
       +'<td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #f1f5f9;color:#475569">'+thDateShort(d.docDate)+'</td>'
       +'<td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #f1f5f9">'+esc(d.customerName||'-')+'</td>'
-      +'<td style="padding:8px 10px;font-size:11px;border-bottom:1px solid #f1f5f9;color:#64748b;max-width:200px;word-break:break-all">'+esc(invNums||'-')+'</td>'
+      +'<td style="padding:8px 10px;font-size:11px;border-bottom:1px solid #f1f5f9;color:#64748b;max-width:180px;word-break:break-all">'+esc(invNums||'-')+'</td>'
       +'<td style="text-align:right;padding:8px 10px;font-size:12px;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">฿'+fmoney(d.total)+'</td>'
       +'<td style="text-align:center;padding:8px 10px;font-size:11px;border-bottom:1px solid #f1f5f9">'+(d.paymentDate?'<span style="background:#d6efe0;color:#1d8a4e;padding:2px 7px;border-radius:999px;font-weight:600">จ่าย '+thDateShort(d.paymentDate)+'</span>':'<span style="background:#fff5e6;color:#b25000;padding:2px 7px;border-radius:999px;font-weight:600">ค้าง</span>')+'</td>'
       +'</tr>';
   }).join('');
+  const typeTh=showType?'<th style="padding:8px 10px;text-align:left;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:90px;border-bottom:2px solid #cbd5e1">ประเภท</th>':'';
+  const footColspan=showType?6:5;
 
   const win=window.open('','_blank','width=900,height=1100');
   win.document.write('<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><title>'+esc(title)+' — '+set.name+'</title>'
@@ -570,6 +675,7 @@ async function _runBillingSummary(store,all){
     +'<table style="width:100%;border-collapse:collapse;font-size:12px">'
     +'<thead><tr style="background:#f1f5f9">'
     +'<th style="padding:8px 6px;text-align:center;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:30px;border-bottom:2px solid #cbd5e1">#</th>'
+    +typeTh
     +'<th style="padding:8px 10px;text-align:left;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #cbd5e1">เลขที่</th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:75px;border-bottom:2px solid #cbd5e1">วันที่</th>'
     +'<th style="padding:8px 10px;text-align:left;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #cbd5e1">ลูกค้า</th>'
@@ -578,7 +684,7 @@ async function _runBillingSummary(store,all){
     +'<th style="padding:8px 10px;text-align:center;font-size:10px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;width:110px;border-bottom:2px solid #cbd5e1">สถานะ</th>'
     +'</tr></thead>'
     +'<tbody>'+rows+'</tbody>'
-    +'<tfoot><tr><td colspan="5" style="padding:14px 10px;text-align:right;font-size:13px;font-weight:600;border-top:2px solid #0f172a">รวมทั้งสิ้น</td>'
+    +'<tfoot><tr><td colspan="'+footColspan+'" style="padding:14px 10px;text-align:right;font-size:13px;font-weight:600;border-top:2px solid #0f172a">รวมทั้งสิ้น</td>'
     +'<td style="padding:14px 10px;text-align:right;font-size:15px;font-weight:800;border-top:2px solid #0f172a;color:#2a5a78">฿'+fmoney(total)+'</td>'
     +'<td style="border-top:2px solid #0f172a"></td></tr></tfoot>'
     +'</table>'
