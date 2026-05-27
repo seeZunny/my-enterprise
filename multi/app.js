@@ -341,29 +341,6 @@ async function pgDashboard(){
     });
   },80);
 
-  // SPARKLINE — monthly sales trend
-  if(inv.length){
-    const trend=document.createElement('div');trend.className='card';trend.style.cssText='margin-bottom:24px;padding:18px 22px';
-    const totalLastMonth=inv.filter(d=>{
-      const ym=(d.docDate||d.createdAt||'').slice(0,7);
-      const last=new Date();last.setMonth(last.getMonth()-1);
-      return ym===last.toISOString().slice(0,7);
-    }).reduce((s,d)=>s+Number(d.total||0),0);
-    const totalThisMonth=inv.filter(d=>{
-      const ym=(d.docDate||d.createdAt||'').slice(0,7);
-      return ym===new Date().toISOString().slice(0,7);
-    }).reduce((s,d)=>s+Number(d.total||0),0);
-    const delta=totalLastMonth>0?((totalThisMonth-totalLastMonth)/totalLastMonth)*100:0;
-    const deltaStr=totalLastMonth>0?(delta>=0?'+':'')+delta.toFixed(0)+'%':'—';
-    const deltaColor=delta>=0?'var(--success)':'var(--danger)';
-    trend.innerHTML='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
-      +'<div><div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600">ยอดขาย 6 เดือนล่าสุด</div>'
-      +'<div style="font-size:13px;color:var(--ink-2);margin-top:2px">เดือนนี้ <b>฿'+fmoney(totalThisMonth)+'</b> · <span style="color:'+deltaColor+'">'+deltaStr+'</span> เทียบเดือนก่อน</div></div>'
-      +'</div>'
-      +monthlySalesChart(inv,520,80,'#5856d6');
-    c.appendChild(trend);
-  }
-
   // RECENT + PENDING grid
   const grid=document.createElement('div');grid.className='dash-grid';
 
