@@ -9,10 +9,11 @@ const STORE_KEY={
   settings:'id', customers:'id', inventory:'id',
   quotations:'id', invoices:'id', receipts:'id',
   billings:'id', billing_combined:'id',
+  billnotices:'id',
   doc_counters:'type', address_book:'id',
 };
 const STORE_LIST=Object.keys(STORE_KEY);
-const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','address_book']);
+const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','billnotices','address_book']);
 
 const _mem={};         // _mem[store] = { [key]: record }
 const _autoSeq={};     // _autoSeq[store] = next numeric id
@@ -118,8 +119,8 @@ function dbClear(s){
 // ============================================================
 // DOC NUMBERING — BL counter shared for billing + billing_combined
 // ============================================================
-const DOC_PFX={quotation:'QT',invoice:'INV',receipt:'RC',billing:'BL',billing_combined:'BL'};
-const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',billing:'billings',billing_combined:'billing_combined'};
+const DOC_PFX={quotation:'QT',invoice:'INV',receipt:'RC',billing:'BL',billing_combined:'BL',billnotice:'BN'};
+const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',billing:'billings',billing_combined:'billing_combined',billnotice:'billnotices'};
 
 const _maxCache={};
 function _invalidateMaxCache(){Object.keys(_maxCache).forEach(k=>delete _maxCache[k]);}

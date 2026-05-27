@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260516e">
+<link rel="stylesheet" href="styles.css?v=20260517a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   /* Auth overlay */
@@ -168,7 +168,7 @@
 // ============================================================
 async function repairCounters(){
   const thYear=new Date().getFullYear()+543;
-  for(const type of ['quotation','invoice','receipt','billing']){
+  for(const type of ['quotation','invoice','billnotice','receipt','billing']){
     const realMax=await getMaxDocCount(type,thYear);
     const ctr=await dbGet('doc_counters',type);
     if(!ctr||ctr.year!==thYear||ctr.count!==realMax){
@@ -367,6 +367,7 @@ function setupCreateMenu(){
   const items=[
     {label:'ใบเสนอราคา',sub:'Quotation',icon:'quote',color:'var(--quo)',bg:'var(--quo-soft)',fn:openQuotationForm},
     {label:'ใบกำกับภาษี / ใบส่งของ',sub:'Tax Invoice',icon:'invoice',color:'var(--inv)',bg:'var(--inv-soft)',fn:openInvoiceForm},
+    {label:'ใบแจ้งหนี้',sub:'Bill Notice',icon:'billing',color:'var(--bil)',bg:'var(--bil-soft)',fn:openBillNoticeForm},
     {label:'ใบเสร็จรับเงิน',sub:'Receipt',icon:'receipt',color:'var(--rec)',bg:'var(--rec-soft)',fn:openReceiptForm},
     {label:'ใบวางบิล',sub:'Billing Note',icon:'billing',color:'var(--bil)',bg:'var(--bil-soft)',fn:openBillingForm},
     {label:'ใบวางบิลรวม',sub:'Combined',icon:'billings',color:'var(--blc)',bg:'var(--blc-soft)',fn:openBillingCombinedForm},

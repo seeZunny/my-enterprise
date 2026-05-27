@@ -41,6 +41,7 @@ async function renderCmdK(q,keepHL){
   const actions=[
     {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบเสนอราคา',sub:'ออกใบเสนอราคาใหม่',fn:openQuotationForm},
     {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบกำกับภาษี / ใบส่งของ',sub:'INV',fn:openInvoiceForm},
+    {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบแจ้งหนี้',sub:'BN',fn:openBillNoticeForm},
     {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบเสร็จรับเงิน',sub:'RC',fn:openReceiptForm},
     {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบวางบิล',sub:'BL',fn:openBillingForm},
     {sec:'สร้างใหม่',icon:'plus',title:'สร้างใบวางบิลรวม',sub:'BL (รวม)',fn:openBillingCombinedForm},
@@ -62,8 +63,8 @@ async function renderCmdK(q,keepHL){
 
   let docs=[],customers=[],items=[];
   if(q){
-    const stores=['quotations','invoices','receipts','billings','billing_combined'];
-    const labels={quotations:'ใบเสนอ',invoices:'ใบกำกับ',receipts:'ใบเสร็จ',billings:'ใบวางบิล',billing_combined:'ใบวางบิลรวม'};
+    const stores=['quotations','invoices','billnotices','receipts','billings','billing_combined'];
+    const labels={quotations:'ใบเสนอ',invoices:'ใบกำกับ',billnotices:'ใบแจ้งหนี้',receipts:'ใบเสร็จ',billings:'ใบวางบิล',billing_combined:'ใบวางบิลรวม'};
     for(const s of stores){
       const all=await dbAll(s);
       all.forEach(d=>{

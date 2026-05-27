@@ -1,9 +1,9 @@
 // ============================================================
 // PRINT / PREVIEW — A4 document HTML generator
 // ============================================================
-const DOC_LABEL={quotations:'ใบเสนอราคา', invoices:'ใบกำกับภาษี / ใบส่งของ', receipts:'ใบเสร็จรับเงิน', billings:'ใบวางบิล', billing_combined:'ใบวางบิลรวม'};
-const DOC_COLOR={quotations:'#f59e0b', invoices:'#6366f1', receipts:'#10b981', billings:'#0ea5e9', billing_combined:'#8b5cf6'};
-const DOC_SOFT={quotations:'#fef3c7', invoices:'#e0e7ff', receipts:'#d1fae5', billings:'#e0f2fe', billing_combined:'#ede9fe'};
+const DOC_LABEL={quotations:'ใบเสนอราคา', invoices:'ใบกำกับภาษี / ใบส่งของ', receipts:'ใบเสร็จรับเงิน', billings:'ใบวางบิล', billing_combined:'ใบวางบิลรวม', billnotices:'ใบแจ้งหนี้'};
+const DOC_COLOR={quotations:'#f59e0b', invoices:'#6366f1', receipts:'#10b981', billings:'#0ea5e9', billing_combined:'#8b5cf6', billnotices:'#ec4899'};
+const DOC_SOFT={quotations:'#fef3c7', invoices:'#e0e7ff', receipts:'#d1fae5', billings:'#e0f2fe', billing_combined:'#ede9fe', billnotices:'#fce7f3'};
 
 function buildDocHTML(doc,set,store,invRefs){
   const color=DOC_COLOR[store]||'#0f172a';

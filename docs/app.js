@@ -27,6 +27,7 @@ const NAV=[
   {sec:'ออกเอกสาร',items:[
     {key:'quotation',label:'ใบเสนอราคา',icon:'quote'},
     {key:'invoice',label:'ใบกำกับ / ใบส่งของ',icon:'invoice'},
+    {key:'billnotice',label:'ใบแจ้งหนี้',icon:'billing'},
     {key:'receipt',label:'ใบเสร็จรับเงิน',icon:'receipt'},
     {key:'billing',label:'ใบวางบิล (ทั้งหมด)',icon:'billing'},
     {key:'print-billing-summary',label:'พิมพ์สรุปยอด',icon:'print',action:()=>printBillingSummary(null)},
@@ -111,10 +112,15 @@ async function navigate(page){
     dashboard:pgDashboard, docs:pgDocs, search:pgSearch,
     quotation:pgQuotation, invoice:pgInvoice, receipt:pgReceipt,
     billing:pgBilling, 'billing-combined':pgBillingCombined,
+    billnotice:pgBillNotice,
     customers:pgCustomers, inventory:pgInventory, accounting:pgAccounting,
     settings:pgSettings, backup:pgBackup,
   };
   if(pages[page])await pages[page]();
+}
+
+async function pgBillNotice(){
+  await renderDocList({store:'billnotices',title:'ใบแจ้งหนี้',color:'var(--bil)',icon:'bil',addFn:()=>openBillNoticeForm(),addLabel:'สร้างใบแจ้งหนี้'});
 }
 
 // ============================================================
@@ -305,12 +311,13 @@ async function pgDashboard(){
 // ALL DOCS LIST
 // ============================================================
 async function pgDocs(){
-  const[q,inv,rec,bil,blc]=await Promise.all([dbAll('quotations'),dbAll('invoices'),dbAll('receipts'),dbAll('billings'),dbAll('billing_combined')]);
+  const[q,inv,rec,bil,blc,bn]=await Promise.all([dbAll('quotations'),dbAll('invoices'),dbAll('receipts'),dbAll('billings'),dbAll('billing_combined'),dbAll('billnotices')]);
   // payment linkage: build set of invoice IDs that have a receipt against them
   const paidInvIds=new Set(rec.filter(r=>r.linkedInvoiceId).map(r=>Number(r.linkedInvoiceId)));
   const all=[
     ...q.map(d=>({...d,_s:'quotations',_lbl:'ใบเสนอ',_cls:'b-quo',_col:'var(--quo)'})),
     ...inv.map(d=>({...d,_s:'invoices',_lbl:'ใบกำกับ',_cls:'b-inv',_col:'var(--inv)',_paid:paidInvIds.has(Number(d.id))})),
+    ...bn.map(d=>({...d,_s:'billnotices',_lbl:'ใบแจ้งหนี้',_cls:'b-bil',_col:'var(--bil)'})),
     ...rec.map(d=>({...d,_s:'receipts',_lbl:'ใบเสร็จ',_cls:'b-rec',_col:'var(--rec)'})),
     ...bil.map(d=>({...d,_s:'billings',_lbl:'ใบวางบิล',_cls:'b-bil',_col:'var(--bil)'})),
     ...blc.map(d=>({...d,_s:'billing_combined',_lbl:'ใบวางบิลรวม',_cls:'b-blc',_col:'var(--blc)'})),
@@ -322,7 +329,7 @@ async function pgDocs(){
 
   let cur='all';
   const chips=document.createElement('div');chips.className='chips';
-  const opts=[{k:'all',l:'ทั้งหมด',n:all.length},{k:'quotations',l:'ใบเสนอ',n:q.length},{k:'invoices',l:'ใบกำกับ',n:inv.length},{k:'receipts',l:'ใบเสร็จ',n:rec.length},{k:'billings',l:'ใบวางบิล',n:bil.length},{k:'billing_combined',l:'ใบวางบิลรวม',n:blc.length}];
+  const opts=[{k:'all',l:'ทั้งหมด',n:all.length},{k:'quotations',l:'ใบเสนอ',n:q.length},{k:'invoices',l:'ใบกำกับ',n:inv.length},{k:'billnotices',l:'ใบแจ้งหนี้',n:bn.length},{k:'receipts',l:'ใบเสร็จ',n:rec.length},{k:'billings',l:'ใบวางบิล',n:bil.length},{k:'billing_combined',l:'ใบวางบิลรวม',n:blc.length}];
   opts.forEach(o=>{
     const ch=document.createElement('div');ch.className='chip'+(o.k==='all'?' active':'');
     ch.innerHTML=esc(o.l)+' <span style="opacity:.6;margin-left:4px">'+o.n+'</span>';
@@ -734,9 +741,9 @@ async function doSearch(){
   const q=(document.getElementById('gsearch')?.value||'').toLowerCase().trim();
   const res=document.getElementById('sresults');
   if(!q){res.innerHTML='<div class="empty"><div class="empty-i">'+I.search+'</div><div class="empty-t">พิมพ์เพื่อค้นหา</div></div>';return;}
-  const stores=['quotations','invoices','receipts','billings','billing_combined'];
-  const labels={quotations:'ใบเสนอ',invoices:'ใบกำกับ',receipts:'ใบเสร็จ',billings:'ใบวางบิล',billing_combined:'ใบวางบิลรวม'};
-  const cls={quotations:'b-quo',invoices:'b-inv',receipts:'b-rec',billings:'b-bil',billing_combined:'b-blc'};
+  const stores=['quotations','invoices','billnotices','receipts','billings','billing_combined'];
+  const labels={quotations:'ใบเสนอ',invoices:'ใบกำกับ',billnotices:'ใบแจ้งหนี้',receipts:'ใบเสร็จ',billings:'ใบวางบิล',billing_combined:'ใบวางบิลรวม'};
+  const cls={quotations:'b-quo',invoices:'b-inv',billnotices:'b-bil',receipts:'b-rec',billings:'b-bil',billing_combined:'b-blc'};
   let all=[];
   for(const s of stores){
     const docs=await dbAll(s);
@@ -847,6 +854,7 @@ async function viewCustomerHistory(cu){
   const STORES=[
     {s:'quotations',lbl:'ใบเสนอราคา',cls:'b-quo'},
     {s:'invoices',lbl:'ใบกำกับ',cls:'b-inv'},
+    {s:'billnotices',lbl:'ใบแจ้งหนี้',cls:'b-bil'},
     {s:'receipts',lbl:'ใบเสร็จ',cls:'b-rec'},
     {s:'billings',lbl:'ใบวางบิล',cls:'b-bil'},
     {s:'billing_combined',lbl:'ใบวางบิลรวม',cls:'b-blc'},
@@ -1245,6 +1253,7 @@ async function pgBackup(){
     +'<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:13px">'
     +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="quotations" checked> ใบเสนอราคา</label>'
     +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="invoices" checked> ใบกำกับ/ใบส่งของ</label>'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="billnotices" checked> ใบแจ้งหนี้</label>'
     +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="receipts" checked> ใบเสร็จ</label>'
     +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="billings" checked> ใบวางบิล</label>'
     +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="ex-type" value="billing_combined" checked> ใบวางบิลรวม</label>'
@@ -1300,7 +1309,7 @@ async function pgBackup(){
 }
 
 async function backupData(){
-  const stores=['settings','customers','inventory','quotations','invoices','receipts','billings','billing_combined','doc_counters'];
+  const stores=['settings','customers','inventory','quotations','invoices','billnotices','receipts','billings','billing_combined','doc_counters'];
   const bk={version:3,timestamp:new Date().toISOString(),data:{}};
   for(const s of stores)bk.data[s]=await dbAll(s);
   const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});
@@ -1318,6 +1327,7 @@ async function backupData(){
 const _STORE_LABEL={
   quotations:'ใบเสนอราคา',
   invoices:'ใบกำกับ-ใบส่งของ',
+  billnotices:'ใบแจ้งหนี้',
   receipts:'ใบเสร็จ',
   billings:'ใบวางบิล',
   billing_combined:'ใบวางบิลรวม',
@@ -1455,7 +1465,7 @@ async function restoreData(inp){
 
 async function clearDocuments(){
   if(!confirm('ลบเอกสารทั้งหมด?\n\n• ใบเสนอราคา\n• ใบกำกับภาษี\n• ใบเสร็จ\n• ใบวางบิล\n• ใบวางบิลรวม\n\nกู้คืนไม่ได้! แนะนำ Backup ก่อน'))return;
-  for(const s of['quotations','invoices','receipts','billings','billing_combined','doc_counters'])await dbClear(s);
+  for(const s of['quotations','invoices','billnotices','receipts','billings','billing_combined','doc_counters'])await dbClear(s);
   _invalidateMaxCache();
   toast('ลบเอกสารทั้งหมดเรียบร้อย','warn');
   document.getElementById('clear-status').innerHTML='<span style="color:var(--success)">'+I.check+' ลบเรียบร้อย</span>';

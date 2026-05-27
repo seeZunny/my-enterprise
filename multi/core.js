@@ -9,11 +9,12 @@ const STORE_KEY={
   settings:'id', customers:'id', inventory:'id',
   quotations:'id', invoices:'id', receipts:'id',
   billings:'id', billing_combined:'id',
+  billnotices:'id',
   doc_counters:'type', address_book:'id',
   companies:'id', // multi: list of issuer companies (multi-company)
 };
 const STORE_LIST=Object.keys(STORE_KEY);
-const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','address_book','companies']);
+const AUTO_INC=new Set(['customers','inventory','quotations','invoices','receipts','billings','billing_combined','billnotices','address_book','companies']);
 
 const _mem={};         // _mem[store] = { [key]: record }
 const _autoSeq={};     // _autoSeq[store] = next numeric id
@@ -120,8 +121,8 @@ function dbClear(s){
 // DOC NUMBERING — BL counter shared for billing + billing_combined
 // ============================================================
 // /multi/ system uses 'M-' prefix to distinguish from /docs/ (e.g. M-QT-2569-0001)
-const DOC_PFX={quotation:'MQT',invoice:'MINV',receipt:'MRC',billing:'MBL',billing_combined:'MBL'};
-const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',billing:'billings',billing_combined:'billing_combined'};
+const DOC_PFX={quotation:'MQT',invoice:'MINV',receipt:'MRC',billing:'MBL',billing_combined:'MBL',billnotice:'MBN'};
+const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',billing:'billings',billing_combined:'billing_combined',billnotice:'billnotices'};
 
 const _maxCache={};
 function _invalidateMaxCache(){Object.keys(_maxCache).forEach(k=>delete _maxCache[k]);}

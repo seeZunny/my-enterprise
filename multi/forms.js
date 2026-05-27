@@ -346,6 +346,27 @@ async function saveInvoice(id){
 }
 
 // ============================================================
+// BILL NOTICE FORM (ใบแจ้งหนี้)
+// ============================================================
+async function openBillNoticeForm(id=null,prefill=null){
+  const[custs,prods,set]=await Promise.all([dbAll('customers'),dbAll('inventory'),getSettings()]);
+  let doc=prefill||null;
+  if(id&&!prefill)doc=await dbGet('billnotices',id);
+  const docNum=(id&&!prefill)?doc.docNumber:await peekDocNum('billnotice');
+  openModal(
+    '<div class="mh mh-bil"><div class="mt"><div class="mt-icon">'+I.billing+'</div>'+(id&&!prefill?'แก้ไข':'สร้าง')+'ใบแจ้งหนี้</div>'
+    +'<button class="mc" onclick="closeModal()">'+I.x+'</button></div>'
+    +'<div class="mb" id="bnbody"></div>'
+    +'<div class="mf"><button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>'
+    +'<button class="btn btn-doc btn-bil btn-save" onclick="saveBillNotice('+(id&&!prefill?id:'null')+')">'+I.save+' บันทึก</button></div>'
+  );
+  buildDocFormBody('bnbody','billnotice',doc,custs,prods,set,docNum,prefill);
+}
+async function saveBillNotice(id){
+  await saveDocGeneric('billnotice','billnotices',id,()=>navigate('billnotice'));
+}
+
+// ============================================================
 // RECEIPT FORM
 // ============================================================
 async function openReceiptForm(id=null,prefill=null){
