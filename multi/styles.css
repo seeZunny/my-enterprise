@@ -764,42 +764,39 @@ body{
 }
 
 @supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  /* Perf: cards & stats are SOLID — keep blur only on top-level surfaces. */
   .card,.card-flat{
-    background:rgba(255,255,255,.62);
-    border-color:rgba(255,255,255,.65);
-    -webkit-backdrop-filter:blur(20px) saturate(180%);
-    backdrop-filter:blur(20px) saturate(180%);
-    box-shadow:0 1px 1px rgba(0,0,0,.03), 0 10px 30px -12px rgba(20,24,50,.18);
+    background:rgba(255,255,255,.92);
+    border-color:rgba(255,255,255,.7);
+    box-shadow:0 1px 1px rgba(0,0,0,.03), 0 6px 18px -10px rgba(20,24,50,.14);
   }
   .stats{
-    background:rgba(255,255,255,.55);
-    border-color:rgba(255,255,255,.6);
-    -webkit-backdrop-filter:blur(20px) saturate(180%);
-    backdrop-filter:blur(20px) saturate(180%);
+    background:rgba(255,255,255,.92);
+    border-color:rgba(255,255,255,.7);
   }
   .modal{
     background:rgba(255,255,255,.78);
     border-left:1px solid rgba(255,255,255,.6);
-    -webkit-backdrop-filter:blur(30px) saturate(180%);
-    backdrop-filter:blur(30px) saturate(180%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    backdrop-filter:blur(18px) saturate(160%);
   }
   .mh,.mf{background:rgba(255,255,255,.35)}
   .overlay{background:rgba(20,24,50,.30)}
   .cmdk-ov{background:rgba(20,24,50,.32)}
   .cmdk{
     background:rgba(255,255,255,.80);
-    -webkit-backdrop-filter:blur(30px) saturate(180%);
-    backdrop-filter:blur(30px) saturate(180%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    backdrop-filter:blur(18px) saturate(160%);
   }
   #topnav{
     background:rgba(255,255,255,.60);
-    -webkit-backdrop-filter:blur(22px) saturate(180%);
-    backdrop-filter:blur(22px) saturate(180%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
+    backdrop-filter:blur(14px) saturate(160%);
   }
   #mob-drawer{
     background:rgba(255,255,255,.85);
-    -webkit-backdrop-filter:blur(28px) saturate(180%);
-    backdrop-filter:blur(28px) saturate(180%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    backdrop-filter:blur(18px) saturate(160%);
   }
   .card,.stat,.modal,.cmdk{color:var(--ink)}
 }
