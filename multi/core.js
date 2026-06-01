@@ -127,18 +127,27 @@ const DOC_STORE={quotation:'quotations',invoice:'invoices',receipt:'receipts',bi
 const _maxCache={};
 function _invalidateMaxCache(){Object.keys(_maxCache).forEach(k=>delete _maxCache[k]);}
 
-async function getMaxDocCount(type,thYear){
+// Period = Thai year + 2-digit month. The running number resets to 0001
+// at the start of every month. e.g. June 2026 -> "256906" -> MINV-256906-0001
+function _curPeriod(){
+  const d=new Date();
+  const thYear=d.getFullYear()+543;
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  return ''+thYear+mm;
+}
+
+async function getMaxDocCount(type,period){
   const isBilGroup=(type==='billing'||type==='billing_combined');
   const stores=isBilGroup?['billings','billing_combined']:[DOC_STORE[type]];
-  const pfx=DOC_PFX[type]+'-'+thYear+'-';
-  const key=type+':'+thYear;
+  const pfx=DOC_PFX[type]+'-'+period+'-';
+  const key=type+':'+period;
   if(_maxCache[key]!==undefined)return _maxCache[key];
   let max=0;
   for(const s of stores){
     const docs=await dbAll(s);
     docs.forEach(d=>{
       if(d.docNumber&&d.docNumber.startsWith(pfx)){
-        const n=parseInt(d.docNumber.replace(pfx,''),10);
+        const n=parseInt(d.docNumber.slice(pfx.length),10);
         if(!isNaN(n)&&n>max)max=n;
       }
     });
@@ -148,16 +157,16 @@ async function getMaxDocCount(type,thYear){
 }
 
 async function nextDocNum(type){
-  const thYear=new Date().getFullYear()+543;
-  const realMax=await getMaxDocCount(type,thYear);
+  const period=_curPeriod();
+  const realMax=await getMaxDocCount(type,period);
   const next=realMax+1;
   _invalidateMaxCache();
-  return DOC_PFX[type]+'-'+thYear+'-'+String(next).padStart(4,'0');
+  return DOC_PFX[type]+'-'+period+'-'+String(next).padStart(4,'0');
 }
 async function peekDocNum(type){
-  const thYear=new Date().getFullYear()+543;
-  const realMax=await getMaxDocCount(type,thYear);
-  return DOC_PFX[type]+'-'+thYear+'-'+String(realMax+1).padStart(4,'0');
+  const period=_curPeriod();
+  const realMax=await getMaxDocCount(type,period);
+  return DOC_PFX[type]+'-'+period+'-'+String(realMax+1).padStart(4,'0');
 }
 
 // ============================================================

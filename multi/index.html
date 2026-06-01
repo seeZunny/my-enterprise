@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260517c">
+<link rel="stylesheet" href="styles.css?v=20260601a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   /* Auth overlay */
@@ -156,23 +156,23 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<script src="icons.js?v=20260517c"></script>
-<script src="core.js?v=20260517c"></script>
-<script src="forms.js?v=20260517c"></script>
-<script src="print.js?v=20260517c"></script>
-<script src="app.js?v=20260517c"></script>
-<script src="cmdk.js?v=20260517c"></script>
+<script src="icons.js?v=20260601a"></script>
+<script src="core.js?v=20260601a"></script>
+<script src="forms.js?v=20260601a"></script>
+<script src="print.js?v=20260601a"></script>
+<script src="app.js?v=20260601a"></script>
+<script src="cmdk.js?v=20260601a"></script>
 <script>
 // ============================================================
 // REPAIR + INIT
 // ============================================================
 async function repairCounters(){
-  const thYear=new Date().getFullYear()+543;
+  const period=_curPeriod();
   for(const type of ['quotation','invoice','billnotice','receipt','billing']){
-    const realMax=await getMaxDocCount(type,thYear);
+    const realMax=await getMaxDocCount(type,period);
     const ctr=await dbGet('doc_counters',type);
-    if(!ctr||ctr.year!==thYear||ctr.count!==realMax){
-      await dbPut('doc_counters',{type,count:realMax,year:thYear});
+    if(!ctr||ctr.period!==period||ctr.count!==realMax){
+      await dbPut('doc_counters',{type,count:realMax,period});
     }
   }
 }
